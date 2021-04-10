@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Accounts</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet" />
+        <style type="text/css">
+            body { padding: 20px; }
+        </style>
+    
+        <script src="jquery/jquery-1.10.2.min.js"></script>
+        <script src="jquery/underscore-1.5.2.min.js"></script>
+        <script src="js/jquery.scrollTableBody-1.0.0.js"></script>
+    </head>
+    
+    <body>
+        <h2>Accounts List</h2>
+        <p><a th:href="@{/newacct}">Add Account</a></p>        
+        <table id="arrestedDevelopment" class="table table-striped table-hover table-bordered table-condensed">
+            <thead>
+                <tr>
+					<th>Account ID</th>
+					<th>Name</th>
+					<th>Type</th>
+					<th>Status</th>
+					<th>Parent Account ID</th>
+					<th>Parent Account</th>
+                </tr>
+            </thead>
+            <tbody>
+            	<tr th:each="acct : ${accounts}">
+					<td><span th:text="${acct.acctId}"></span></td>
+					<td><span th:text="${acct.acctName}"></span></td>
+					<td><span th:text="${acct.acctType}"></span></td>
+					<td><span th:text="${acct.status}"></span></td>
+					<td><span th:text="${acct.parentAcctId}"></span></td>
+					<td><span th:text="${acct.parentAcctName}"></span></td>
+				</tr>
+            </tbody>
+        </table>
+        
+        <script type="text/javascript">
+            $(function() {
+                $('#arrestedDevelopment').scrollTableBody({rowsToDisplay:10});
+            });
+        </script>
+    </body>
+</html>
+
+
+
