@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8">
+        <title>B 41 </title>
+        <link href="css/bootstrap.min.css" rel="stylesheet" />
+        <style type="text/css">
+            body { padding: 20px; }
+        </style>
+    
+        <script src="jquery/jquery-1.10.2.min.js"></script>
+        <script src="jquery/underscore-1.5.2.min.js"></script>
+        <script src="js/jquery.scrollTableBody-1.0.0.js"></script>
+</head>
+
+<body>
+	<h2>Upload Transaction</h2>
+	<form th:action="@{/getuploadedtransactions}" method="post">
+		<div class="form-group">
+			<label for="acctName">Account</label> 
+			<select class="form-control"
+				id="acctName" th:name="acctName" th:value="${acctName}">
+				<option value=0 selected>Select account...</option>
+				<option th:each="a : ${accounts}" th:value="${a.acctName}"
+					th:text="${a.acctName}"
+					th:selected="${a.acctName} eq ${selectedAcctName}" />
+			</select>			
+		</div>
+		<div class="form-group">
+		<button type="submit" class="btn btn-primary" name="action" value="save">Submit</button>
+        <button type="submit" class="btn btn-secondary" name="action" value="cancel">Cancel</button>
+        <button type="submit" class="btn float-right btn-link" name="action" value="download">Download Acct</button>
+        <button type="submit" class="btn float-right btn-link" name="action" value="add">Add Transaction</button>                
+		</div>
+	</form>
+		<div>
+			<table id="savedTransactions1"
+				class="table table-striped table-hover table-bordered table-condensed">
+				<thead>
+					<tr>
+						<th>Transaction Date</th>
+						<th>Description</th>
+						<th>Transfer</th>
+						<th>Transaction Amount</th>
+						<th>Balance Amount</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="trans, itemStat : ${loanTransactions}">
+						<td><span th:text="${trans.transDate}">Transaction
+								Date</span></td>
+						<td><span th:text="${trans.inDescription}">Description</span></td>
+						<td><span th:text="${trans.transferAcct}">Transfer</span></td>
+						<td class="text-right"><span th:text="${trans.transAmt}">Transaction
+								Amount</span></td>
+						<td class="text-right"><span th:text="${trans.balanceAmt}">Balance
+								Amount</span></td>
+						<td>
+							<a th:href="@{/deleteloantrans(transId=${trans.transactionId}, acctId=${trans.acctId})}">Delete</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</div>
+       <script type="text/javascript">
+            $(function() {
+                $('#arrestedDevelopment').scrollTableBody({rowsToDisplay:10});
+                
+            });
+            
+            $(document).ready(function(){
+            	$('#savedTransactions').scrollTableBody({rowsToDisplay:10});
+            	 $("#arrestedDevelopment").on('click','.btnDelete',function(){            			
+            	       $(this).closest('tr').remove();
+            	     });
+            });            
+        </script>
+
+</body>
+</html>
+
+

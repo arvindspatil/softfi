@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#wrapper {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#wrapper td {
+	padding: 4px;
+}
+
+#customers {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#customers td, #customers th {
+	border: 1px solid #ddd;
+	padding: 8px;
+}
+
+#customers tr:nth-child(even) {
+	background-color: #f2f2f2;
+}
+
+#customers tr:hover {
+	background-color: #ddd;
+}
+
+#customers th {
+	padding-top: 12px;
+	padding-bottom: 12px;
+	text-align: left;
+	background-color: #4CAF50;
+	color: white;
+}
+
+.wide {
+	width: 300px;
+}
+
+.narrow {
+	width: 100px;
+}
+
+.selectcl {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	font-size : 1em;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+input[type="text"] {
+	font-size: 1.5em;
+	padding: 0.25em;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+button[type="submit"] {
+	font-size: 1.25em;
+	box-sizing: border-box;
+	width: 100%;
+}
+</style>
+</head>
+<body>
+
+
+
+
+
+
+	<!-- 	<select th:object="${user}" th:field="*{permission} class="
+		form-control" name="permission">
+		<option th:each="dropDownItem : ${permissionsList}"
+			th:value="${dropDownItem.getIdPermission()}"
+			th:text="${dropDownItem.toString()}" />
+	</select>
+	
+
+<select th:field="*{type}">
+  <option th:each="type : ${allTypes}" 
+          th:value="${type}" 
+          th:text="#{${'seedstarter.type.' + type}}">Wireframe</option>
+</select>
+
+
+
+	
+ -->
+
+	<table id="wrapper">
+		<tr>
+			<td>
+				<form th:action="@{/hello/edit}" th:object="${booktoupdate}" method="post">			
+				<table id="resourcelink">
+					<tr>
+						<td><span style="font-size: 15px;">Select : </span></td>
+						<td class="wide">
+							<select th:field="*{title}" class="selectcl">
+								<option th:each="b : ${form.books}"
+									 th:value="${b.title}" 
+									 th:text="${b.title}">Arvind</option>
+							</select>
+						</td>
+						<td class="narrow"><button type="submit">OK</button></td>
+					</tr>
+				</table>
+				</form>
+			</td>
+		</tr>
+<!-- -->
+		<tr>
+			<td>
+
+<!--  -->
+				<table id="customers">
+					<tr>
+						<th>Company</th>
+						<th>Contact</th>
+						<th>Country</th>
+					</tr>
+					<tr th:each="book : ${result}">
+						<td>Alfreds Futterkiste</td>
+						<td><span th:text="${book.title}"></span></td>
+						<td><span th:text="${book.author}"></span></td>
+					</tr>
+				</table>
+
+<!--  -->
+<!-- 
+				<table id="customers">
+					<tr>
+						<th>Company</th>
+						<th>Contact</th>
+						<th>Country</th>
+					</tr>
+					<tr>
+						<td>Alfreds Futterkiste</td>
+						<td>Maria Anders</td>
+						<td>Germany</td>
+					</tr>
+					<tr>
+						<td>Berglunds snabbköp</td>
+						<td>Christina Berglund</td>
+						<td>Sweden</td>
+					</tr>
+					<tr>
+						<td>Centro comercial Moctezuma</td>
+						<td>Francisco Chang</td>
+						<td>Mexico</td>
+					</tr>
+					<tr>
+						<td>Ernst Handel</td>
+						<td>Roland Mendel</td>
+						<td>Austria</td>
+					</tr>
+					<tr>
+						<td>Island Trading</td>
+						<td>Helen Bennett</td>
+						<td>UK</td>
+					</tr>
+					<tr>
+						<td>Königlich Essen</td>
+						<td>Philip Cramer</td>
+						<td>Germany</td>
+					</tr>
+					<tr>
+						<td>Laughing Bacchus Winecellars</td>
+						<td>Yoshi Tannamuri</td>
+						<td>Canada</td>
+					</tr>
+					<tr>
+						<td>Magazzini Alimentari Riuniti</td>
+						<td>Giovanni Rovelli</td>
+						<td>Italy</td>
+					</tr>
+					<tr>
+						<td>North/South</td>
+						<td>Simon Crowther</td>
+						<td>UK</td>
+					</tr>
+					<tr>
+						<td>Paris spécialités</td>
+						<td>Marie Bertrand</td>
+						<td>France</td>
+					</tr>
+				</table>
+-->
+			</td>
+		</tr>
+ <!-- -->	</table>
+
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Table V04</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="animate/animate.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="select2/select2.min.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="perfect-scrollbar/perfect-scrollbar.css">
+<!--===============================================================================================-->
+	<link rel="stylesheet" type="text/css" href="css/util.css">
+	<link rel="stylesheet" type="text/css" href="css/main.css">
+<!--===============================================================================================-->
+<style>
+.wide {
+	width: 300px;
+}
+
+.narrow {
+	width: 100px;
+}
+
+.selectcl {
+	font-size: 1.5em;
+	padding: 0.25em;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+input[type="text"] {
+	font-size: 1.5em;
+	padding: 0.25em;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+button[type="submit"] {
+	font-size: 1.5em;
+	padding: 0.25em;
+	box-sizing: border-box;
+	width: 100%;
+}
+</style>
+</head>
+<body>
+
+	<div class="limiter">
+		<div class="container-table100">
+			<div class="wrap-table100">
+				<div class="table100 ver1 m-b-110">
+
+						<div>
+		<table id="resourcelink">
+			<tr>
+				<td class="wide">
+					<select name="cars" id="cars" class="selectcl">
+						<option value="volvo">Volvo</option>
+						<option value="saab">Saab</option>
+						<option value="opel">Opel</option>
+						<option value="audi">Audi</option>
+					</select>
+				</td>
+				<td class="narrow"><button type="submit">OK</button></td>
+			</tr>
+			<tr>
+				<td style="background-color: #fa0; height: 10px;"></td>
+				<td style="background-color: #46f; height: 10px;"></td>
+			</tr>
+<!-- 			<tr>
+				<td colspan="2">(The coloured bars are just here to illustrate
+					the column sizes.)</td>
+			</tr>
+ -->		</table>
+	</div>
+
+<!-- 					<div class="table100-head">
+						<table>
+							<thead>
+								<tr class="row100 head">
+									<th id="idcol" class="cell100 column1">ID</th>
+									<th id="fncol" class="cell100 column2">First Name</th>
+								</tr>
+							</thead>
+						</table>
+					</div>
+
+					<div class="table100-body js-pscroll">
+
+						<table id="mytable">
+							<tbody>
+								<tr class="row100 body">
+									<td class="wide"><select name="cars" id="cars"
+										class="selectcl">
+											<option value="volvo">Volvo</option>
+											<option value="saab">Saab</option>
+											<option value="opel">Opel</option>
+											<option value="audi">Audi</option>
+									</select></td>
+									<td class="narrow"><button type="submit">OK</button></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+ -->
+
+					<div class="table100-head">
+						<table>
+							<thead>
+								<tr class="row100 head">
+									<th id="idcol" class="cell100 column1">ID</th>
+									<th id="fncol" class="cell100 column2">First Name</th>
+									<th id="lncol" class="cell100 column3">Last Name</th>
+									<th id="lncol" class="cell100 column4">Action</th>
+								</tr>
+							</thead>
+						</table>
+					</div>
+
+					<div class="table100-body js-pscroll">
+
+						<table id="mytable">
+							<tbody>
+								<tr class="row100 body" th:each="book : ${form.books}">
+									<form th:action="@{/hello/edit}" th:object="${book}"
+										method="post">
+										<td class="cell100 column1"><span th:text="${book.id}">
+												ID </span></td>
+										<td class="cell100 column2"><span th:text="${book.title}">
+												Title </span></td>
+										<td class="cell100 column3"><input type="text"
+											name="author" th:value="${book.author}"></td>
+										<!-- 
+						                    <input type="hidden" name="id" th:value="${book.id}">
+						                    <input type="hidden" name="title" th:value="${book.title}">
+ -->
+										<td class="cell100 column4"><input type="hidden"
+											name="id" th:value="${book.id}"> <input type="hidden"
+											name="title" th:value="${book.title}">
+											<button type="submit">UPDATE</button></td>
+										<!-- <a th:href="@{/hello/edit/{id}(id=${book.id})}">Edit</a> -->
+										<!-- <a th:href="@{/hello/edit(bid=${book.id}, bname=${book.author})}">Edit</a> -->
+									</form>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<div class="limiter">
+		<div class="container-table100">
+			<div class="wrap-table100">
+				<div class="table100 ver1 m-b-110">
+
+					<!-- 	<div>
+		<table id="resourcelink">
+			<tr>
+				<td class="wide">
+					<select name="cars" id="cars" class="selectcl">
+						<option value="volvo">Volvo</option>
+						<option value="saab">Saab</option>
+						<option value="opel">Opel</option>
+						<option value="audi">Audi</option>
+					</select>
+				</td>
+				<td class="narrow"><button type="submit">OK</button></td>
+			</tr>
+			<tr>
+				<td style="background-color: #fa0; height: 10px;"></td>
+				<td style="background-color: #46f; height: 10px;"></td>
+			</tr>
+			<tr>
+				<td colspan="2">(The coloured bars are just here to illustrate
+					the column sizes.)</td>
+			</tr>
+		</table>
+	</div>
+ -->
+<!-- 					<div class="table100-head">
+						<table>
+							<thead>
+								<tr class="row100 head">
+									<th id="idcol" class="cell100 column1">ID</th>
+									<th id="fncol" class="cell100 column2">First Name</th>
+								</tr>
+							</thead>
+						</table>
+					</div>
+
+					<div class="table100-body js-pscroll">
+
+						<table id="mytable">
+							<tbody>
+								<tr class="row100 body">
+									<td class="wide"><select name="cars" id="cars"
+										class="selectcl">
+											<option value="volvo">Volvo</option>
+											<option value="saab">Saab</option>
+											<option value="opel">Opel</option>
+											<option value="audi">Audi</option>
+									</select></td>
+									<td class="narrow"><button type="submit">OK</button></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+ -->
+
+					<div class="table100-head">
+						<table>
+							<thead>
+								<tr class="row100 head">
+									<th id="idcol" class="cell100 column1">ID</th>
+									<th id="fncol" class="cell100 column2">First Name</th>
+								</tr>
+							</thead>
+						</table>
+					</div>
+
+					<div class="table100-body js-pscroll">
+						<table id="mytable">
+							<tbody>
+								<tr class="row100 body">
+									<form>
+										<td class="cell100 column1"><span>
+												ID </span></td>
+										<td class="cell100 column2"><span>
+												Title </span></td>
+									</form>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<!--===============================================================================================-->	
+	<script src="jquery/jquery-3.2.1.min.js"></script>
+<!--===============================================================================================-->
+	<script src="bootstrap/js/popper.js"></script>
+	<script src="bootstrap/js/bootstrap.min.js"></script>
+<!--===============================================================================================-->
+	<script src="select2/select2.min.js"></script>
+<!--===============================================================================================-->
+	<script src="perfect-scrollbar/perfect-scrollbar.min.js"></script>
+	<script>
+		$('.js-pscroll').each(function(){
+			var ps = new PerfectScrollbar(this);
+
+			$(window).on('resize', function(){
+				ps.update();
+			})
+		});
+
+		function sortTable(f,n){
+			var rows = $('#mytable tbody  tr').get();
+
+			rows.sort(function(a, b) {
+
+				var A = getVal(a);
+				var B = getVal(b);
+
+				if(A < B) {
+					return 1*f;
+				}
+				if(A > B) {
+					return -1*f;
+				}
+				return 0;
+			});
+
+			function getVal(elm){
+				var v = $(elm).children('td').eq(n).text().toUpperCase();
+				if($.isNumeric(v)){
+					v = parseInt(v,10);
+				}
+				return v;
+			}
+
+			$.each(rows, function(index, row) {
+				$('#mytable').children('tbody').append(row);
+			});
+		}
+		var f_id = 1;
+		var f_fn = 1;
+		var f_ln = 1;
+		$("#idcol").click(function(){
+		    f_id *= -1;
+		    var n = $(this).prevAll().length;
+		    sortTable(f_id,n);
+		});
+		$("#fncol").click(function(){
+		    f_fn *= -1;
+		    var n = $(this).prevAll().length;
+		    sortTable(f_fn,n);
+		});
+		$("#lncol").click(function(){
+		    f_ln *= -1;
+		    var n = $(this).prevAll().length;
+		    sortTable(f_ln,n);
+		});
+		
+	</script>
+<!--===============================================================================================-->
+	<script src="js/main.js"></script>
+
+</body>
+</html>

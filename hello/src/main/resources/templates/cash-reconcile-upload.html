@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Bootstrap 41 Vertical Form Layout</title>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<style>
+body { padding: 20px; }
+
+    .bs-example{
+        margin: 20px;        
+    }
+    
+    .fake-link {
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+</style> -->
+
+        <meta charset="utf-8">
+        <title>B 41 </title>
+        <link href="css/bootstrap.min.css" rel="stylesheet" />
+        <style type="text/css">
+            body { padding: 20px; }
+        </style>
+    
+        <script src="jquery/jquery-1.10.2.min.js"></script>
+        <script src="jquery/underscore-1.5.2.min.js"></script>
+        <script src="js/jquery.scrollTableBody-1.0.0.js"></script>
+</head>
+
+<body>
+	<h2>Upload Transaction</h2>
+	<form th:action="@{/getuploadedtransactions}" method="post">
+<!-- 	<form th:action="@{/hello/edit}" th:object="${booktoupdate}" method="post"> -->
+		<div class="form-group">
+			<label for="acctName">Account</label> 
+			<select class="form-control"
+				id="acctName" th:name="acctName" th:value="${acctName}">
+				<option value=0 selected>Select account...</option>
+				<option th:each="a : ${accounts}" th:value="${a.acctName}"
+					th:text="${a.acctName}"
+					th:selected="${a.acctName} eq ${selectedAcctName}" />
+			</select>			
+		</div>
+		<div class="form-group">
+		<button type="submit" class="btn btn-primary" name="action" value="save">Submit</button>
+        <button type="submit" class="btn btn-secondary" name="action" value="cancel">Cancel</button>
+        <button type="submit" class="btn float-right btn-link" name="action" value="download">Download Acct</button>
+        <button type="submit" class="btn float-right btn-link" name="action" value="add">Add Transaction</button>                
+		</div>
+	</form>
+		<div>
+			<table id="arrestedDevelopment"
+				class="table table-striped table-hover table-bordered table-condensed">
+				<thead>
+					<tr>
+						<th>Transaction Date</th>
+						<th>Description</th>
+						<th>Transaction Amount</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="trans, itemStat : ${transactions}">
+						<td><span th:text="${trans.transDate}">Transaction
+								Date</span></td>
+						<td><span th:text="${trans.inDescription}">Description</span></td>
+						<td class="text-right"><span th:text="${trans.transAmt}">Transaction
+								Amount</span></td>
+						<td>						
+							<a th:href="@{/accepttrans(transId=${trans.transactionId}, transDate=${trans.transDate}, desc=${trans.inDescription}, transAmt=${trans.transAmt}, acctId=${trans.acctId})}">Accept</a>
+							&nbsp;&nbsp;&nbsp;
+							<a th:href="@{/edittrans(transId=${trans.transactionId}, acctId=${trans.acctId})}">Edit</a>
+							&nbsp;&nbsp;&nbsp;
+<!-- 							<a th:href="@{/savetrans(transId=${trans.transactionId}, transDate=${trans.transDate}, desc=${trans.inDescription}, transAmt=${trans.transAmt}, acctName=${acctName})}">Edit</a>
+							&nbsp;&nbsp;&nbsp;
+ -->							<a th:href="@{/deletetrans(transId=${trans.transactionId}, acctId=${trans.acctId})}">Delete</a>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div>
+					<table id="savedTransactions1"
+				class="table table-striped table-hover table-bordered table-condensed">
+				<thead>
+					<tr>
+						<th>Transaction Date</th>
+						<th>Description</th>
+						<th>Transfer</th>
+						<th>Transaction Amount</th>
+						<th>Balance Amount</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="trans, itemStat : ${cardTransactions}">
+						<td><span th:text="${trans.transDate}">Transaction
+								Date</span></td>
+						<td><span th:text="${trans.inDescription}">Description</span></td>
+						<td><span th:text="${trans.transferAcct}">Transfer</span></td>
+						<td class="text-right"><span th:text="${trans.transAmt}">Transaction
+								Amount</span></td>
+						<td class="text-right"><span th:text="${trans.balanceAmt}">Balance
+								Amount</span></td>
+						<td>
+							<a th:href="@{/deletecardtrans(transId=${trans.transactionId}, acctId=${trans.acctId})}">Delete</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</div>
+		
+		
+<!-- 		<div class="form-group">
+			<label for="file">Example file input</label> <input type="file"
+				class="form-control-file" id="file" th:name="file"
+				th:value="${file}">
+		</div>
+
+        <button type="submit" class="btn btn-primary" name="action" value="save">Save</button>
+        <button type="submit" class="btn btn-secondary" name="action" value="cancel">Cancel</button>
+ -->
+       <script type="text/javascript">
+            $(function() {
+                $('#arrestedDevelopment').scrollTableBody({rowsToDisplay:10});
+                
+            });
+            
+            $(document).ready(function(){
+            	$('#savedTransactions').scrollTableBody({rowsToDisplay:10});
+            	 $("#arrestedDevelopment").on('click','.btnDelete',function(){
+            			//display the spinner
+            			// $('#ajaxLoader').show();
+            			
+            			//first, let's get rid of the default "SELECT" option if it exists
+            			// var defaultOption = $("#employeeIdSelect option[value='default']");
+            			// if (defaultOption) defaultOption.remove();
+            			
+            			//get the selected id
+            			//var transId = $('#employeeIdSelect').val();
+            			
+            			//get the url for the ajax call
+            			// var url = "./employee/" + employeeId;
+            			
+            			//do the ajax call
+            			// $.get(url, populateEmployeeInfo);
+            	       $(this).closest('tr').remove();
+            	     });
+            });            
+        </script>
+
+</body>
+</html>
+
+

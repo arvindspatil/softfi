@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Securities</title>
+<style>
+#wrapper {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#wrapper td {
+	padding: 4px;
+}
+
+#customers {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#customers td, #customers th {
+	border: 1px solid #ddd;
+	padding: 8px;
+}
+
+#customers tr:nth-child(even) {
+	background-color: #f2f2f2;
+}
+
+#customers tr:hover {
+	background-color: #ddd;
+}
+
+#customers th {
+	padding-top: 12px;
+	padding-bottom: 12px;
+	text-align: left;
+	background-color: #4CAF50;
+	color: white;
+}
+
+.wide {
+	width: 300px;
+}
+
+.narrow {
+	width: 100px;
+}
+
+.selectcl {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	font-size: 1em;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+input[type="text"] {
+	font-size: 1.5em;
+	padding: 0.25em;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+button[type="submit"] {
+	font-size: 1.25em;
+	box-sizing: border-box;
+	width: 100%;
+}
+</style>
+</head>
+<body>
+
+	<table id="wrapper">
+		<tr>
+			<td>
+					<table id="resourcelink">
+						<tr>
+ 							<td class="wide">
+ 							<a style="font-size: 1.5em;" th:href="@{/newsecurity}">Add Security</a>
+ 							</td>
+						</tr>
+					</table>
+			</td>
+		</tr>
+
+		<tr>
+			<td>
+				<table id="customers">
+					<tr>
+						<th>Ticker</th>
+						<th>Description</th>
+						<th>Security Type</th>
+					</tr>
+					<tr th:each="sec : ${securities}">
+						<td><span th:text="${sec.ticker}"></span></td>
+						<td><span th:text="${sec.description}"></span></td>
+						<td><span th:text="${sec.securityType}"></span></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>
