@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Bootstrap 4 Vertical Form Layout</title>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<style>
+body { padding: 20px; }
+
+    .bs-example{
+        margin: 20px;        
+    }
+</style>
+</head>
+<body>
+<div class="bs-example">
+<h2>Edit Checking Transaction</h2>
+</div>
+<div class="bs-example">
+	<form th:action="@{/updatechktrans}" th:object="${trans}" method="get">
+
+        <div class="form-group">
+            <label for="transDate">Transaction Date</label>
+            <input type="text" readonly class="form-control-plaintext" id="transDate" th:value="${trans.transDate}" name="transDate">
+            <input type="hidden" th:value="${trans.acctId}" name="acctId"/>
+            <input type="hidden" th:value="${trans.transactionId}" name="transactionId"/>
+            <!-- <input type="text" readonly class="form-control-plaintext" id="transDate" th:field="*{transDate}">
+            <input type="hidden" th:field="*{acctId}"/>
+            <input type="hidden" th:field="*{transactionId}"/> -->
+        </div>
+        
+        <div class="form-group">
+            <label for="checkNumber">Check Number</label>
+            <input type="text" readonly class="form-control-plaintext" id="checkNumber" th:value="${trans.checkNumber != 0} ? ${trans.checkNumber} : ''">
+			<input type="hidden" th:value="${trans.checkNumber}" name="checkNumber"/>
+            <!-- <input type="text" readonly class="form-control-plaintext" id="checkNumber" th:value="${trans.checkNumber}" name="checkNumber"> -->
+            <!-- <input type="text" readonly class="form-control-plaintext" id="checkNumber" th:field="*{checkNumber}"> -->
+        </div>
+                
+        <div class="form-group">
+            <label for="description">Description</label>
+            <input type="text" class="form-control" id="description" placeholder="Description" required th:value="${trans.description}" name="description">
+            <input type="hidden" th:value="${trans.inDescription}" name="inDescription"/>
+            <!-- <input type="text" class="form-control" id="description" placeholder="Description" required th:field="*{description}">
+            <input type="hidden" th:field="*{inDescription}"/> -->
+        </div>
+        <div class="form-group">
+			<input type="checkbox" id="defaultCheck" name="decision">
+			<label for="defaultCheck">Remember Update Decision</label>
+		</div>        
+         <div class="form-group">
+            <label for="transAmt">Transaction Amount</label>
+            <input type="text" readonly class="form-control-plaintext" id="transAmt" th:value="${trans.transAmt}" name="transAmt">
+			<!-- <input type="text" readonly class="form-control-plaintext" id="transAmt" th:field="*{transAmt}"> -->
+        </div>
+		<div class="form-group">
+			<label for="acctName">Transfer Account</label> 
+			<select class="form-control"
+				id="transferAcct" th:name="transferAcct" th:value="${trans.transferAcct}">
+				<option value="" selected>Select account...</option>
+				<option th:each="a : ${accounts}" th:value="${a.acctName}"
+					th:text="${a.acctName}" />
+			</select>			
+		</div>
+
+        <button type="submit" class="btn btn-primary" name="action" value="save">Save</button>
+        <button type="submit" class="btn btn-secondary" name="action" value="cancel">Cancel</button>
+         
+    </form>
+</div>
+</body>
+</html>

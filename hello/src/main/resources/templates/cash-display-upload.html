@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Bootstrap 4 Vertical Form Layout</title>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<style>
+body { padding: 20px; }
+
+    .bs-example{
+        margin: 20px;        
+    }
+</style>
+</head>
+
+<body>
+	<h2>Upload Transaction</h2>
+	<form method="POST" enctype="multipart/form-data" th:action="@{/uploadacct}">
+		<div class="form-group">
+			<label for="acctName">Account</label> <select class="form-control"
+				id="acctName" th:name="acctName" th:value="${acctName}">
+				<option value=0 selected>Select account...</option>
+				<option th:each="a : ${accounts}" th:value="${a.acctName}"
+					th:text="${a.acctName}" />
+			</select>
+		</div>
+
+		<div class="form-group">
+			<label for="file">Example file input</label> <input type="file"
+				class="form-control-file" id="file" th:name="file"
+				th:value="${file}">
+		</div>
+
+        <button type="submit" class="btn btn-primary" name="action" value="save">Save</button>
+        <button type="submit" class="btn btn-secondary" name="action" value="cancel">Cancel</button>
+
+	</form>
+
+	<form method="POST" enctype="multipart/form-data" th:action="@{/uploadacctquicken}">
+		<div class="form-group">
+			<label for="acctName">Account</label> <select class="form-control"
+				id="acctName" th:name="acctName" th:value="${acctName}">
+				<option value=0 selected>Select account...</option>
+				<option th:each="a : ${accounts}" th:value="${a.acctName}"
+					th:text="${a.acctName}" />
+			</select>
+		</div>
+
+		<div class="form-group">
+			<label for="file">Example file input</label> <input type="file"
+				class="form-control-file" id="file" th:name="file"
+				th:value="${file}">
+		</div>
+
+        <button type="submit" class="btn btn-primary" name="action" value="save">Save Quicken</button>
+        <button type="submit" class="btn btn-secondary" name="action" value="cancel">Cancel</button>
+
+	</form>
+
+</body>
+</html>
+
+

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Merge Upload Account</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet" />
+        <style type="text/css">
+            body { padding: 20px; }
+.btnDelete {
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+}
+        </style>
+    
+        <script src="jquery/jquery-1.10.2.min.js"></script>
+        <script src="jquery/underscore-1.5.2.min.js"></script>
+        <script src="js/jquery.scrollTableBody-1.0.0.js"></script>
+    </head>
+    
+    <body>
+    	<h2>Edit Card Transaction</h2>
+    	<form th:action="@{/updatecardtrans}" th:object="${trans}" method="post">
+		<div class="input-group">
+			<label>Transaction Date</label>
+			<!-- <span th:field="*{transDate}">Transaction Date</span> -->
+ 			<span th:text="${trans.transDate}">Transaction Date</span>
+			<input type="hidden" th:field="*{transDate}"/>
+		</div>
+		<div class="input-group">
+			<label>Description</label>
+			<input type="text" th:field="*{description}"/>
+			<input type="hidden" th:field="*{inDescription}"/>
+<!-- 			<select th:field="*{parentAcctId}">
+				<option value=0 selected>Select parent account...</option>
+				<option th:each="a : ${acctList}" th:value="${a.acctId}" th:text="${a.acctName}"/>
+			</select>
+ -->		</div>
+		<div class="input-group">
+			<label>Transaction Amount</label>
+			<span th:text="${trans.transAmt}">Transaction Amount</span>
+<!-- 			<select th:field="*{acctType}">
+				<option value="" selected>Select account type...</option>
+				<option th:each="t : ${acctTypeList}" th:value="${t}" th:text="${t}"/>
+			</select>
+ -->		</div>
+<!-- 		<div class="input-group">
+			<label>Status</label>
+			<select th:field="*{status}">
+				<option value="" selected>Select account status...</option>
+				<option th:each="s : ${statusList}" th:value="${s}" th:text="${s}"/>
+			</select>
+		</div>
+ -->		<div class="input-group">
+			<button class="btn" type="submit" name="action" value="save" >Save</button>
+			<button class="btn" type="submit" name="action" value="cancel" >Cancel</button>
+		</div>
+	</form>
+    	
+    	
+        <table id="arrestedDevelopment" class="table table-striped table-hover table-bordered table-condensed">
+            <thead>
+                <tr>
+					<th>Transaction Date</th>
+					<th>Description</th>
+					<th>Transaction Amount</th>
+					<th>Action</th>
+                </tr>
+            </thead>
+            <tbody>                
+                <tr th:each="trans, itemStat : ${transactions}">
+					<td><span th:text="${trans.transDate}">Transaction Date</span></td>				
+					<td><span th:text="${trans.inDescription}">Description</span></td>
+					<td class="text-right" ><span th:text="${trans.transAmt}">Transaction Amount</span></td>
+					<td>
+						<a th:href="@{/savetrans(transDate=${trans.transDate}, desc=${trans.inDescription}, transAmt=${trans.transAmt})}">Edit</a>
+                    	&nbsp;&nbsp;&nbsp;
+						<a class="btnDelete">Delete</a>
+                    	<!-- <span class="fake-link" id="fake-link-1">Delete</span> -->                     	
+	                    <!-- <a th:href="" class="btnDelete">Delete</a> -->
+                	</td>
+				</tr>
+            </tbody>
+        </table>
+        
+        <script type="text/javascript">
+            $(function() {
+                $('#arrestedDevelopment').scrollTableBody({rowsToDisplay:10});
+            });
+            
+            $(document).ready(function(){
+
+            	 $("#arrestedDevelopment").on('click','.btnDelete',function(){
+            	       $(this).closest('tr').remove();
+            	     });
+            });
+            
+        </script>
+    </body>
+</html>
