@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#wrapper {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#wrapper td {
+	padding: 4px;
+}
+
+#customers {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#customers td, #customers th {
+	border: 1px solid #ddd;
+	padding: 8px;
+}
+
+#customers tr:nth-child(even) {
+	background-color: #f2f2f2;
+}
+
+#customers tr:hover {
+	background-color: #ddd;
+}
+
+#customers th {
+	padding-top: 12px;
+	padding-bottom: 12px;
+	text-align: left;
+	background-color: #4CAF50;
+	color: white;
+}
+
+.wide {
+	width: 300px;
+}
+
+.narrow {
+	width: 100px;
+}
+
+.selectcl {
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	font-size: 1em;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+input[type="text"] {
+	font-size: 1.5em;
+	padding: 0.25em;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+button[type="submit"] {
+	font-size: 1.25em;
+	box-sizing: border-box;
+	width: 100%;
+}
+</style>
+</head>
+<body>
+
+	<table id="wrapper">
+		<tr>
+			<td>
+<!-- 				<form th:action="@{/hello/edit}" th:object="${booktoupdate}"
+					method="post">
+ -->					<table id="resourcelink">
+						<tr>
+							<td><span style="font-size: 15px;">Select : </span></td>
+<!-- 							<td class="wide"><select th:field="*{title}"
+								class="selectcl">
+									<option th:each="acct : ${accounts}" th:value="${acct.acctId}"
+										th:text="${acct.acctName}"></option>
+							</select></td>
+ -->							<td class="wide"><select 
+								class="selectcl">
+									<option th:each="acct : ${accounts}" th:value="${acct.acctId}"
+										th:text="${acct.acctName}"></option>
+							</select></td>
+							<td class="narrow"><button type="submit">OK</button></td>
+						</tr>
+					</table>
+<!-- 				</form>
+ -->			</td>
+		</tr>
+
+		<tr>
+			<td>
+				<table id="customers">
+					<tr>
+						<th>Account ID</th>
+						<th>Name</th>
+						<th>Type</th>
+						<th>Status</th>
+						<th>Parent Account ID</th>
+						<th>Parent Account</th>
+					</tr>
+					<tr th:each="acct : ${accounts}">
+						<td><span th:text="${acct.acctId}"></span></td>
+						<td><span th:text="${acct.acctName}"></span></td>
+						<td><span th:text="${acct.acctType}"></span></td>
+						<td><span th:text="${acct.status}"></span></td>
+						<td><span th:text="${acct.parentAcctId}"></span></td>
+						<td><span th:text="${acct.parentAcctName}"></span></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>
