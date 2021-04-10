@@ -1,0 +1,180 @@
+package com.arvind.util;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.util.CollectionUtils;
+
+import com.arvind.model.Account;
+import com.arvind.model.CheckingTransaction;
+import com.arvind.model.CreditTransaction;
+import com.arvind.model.InvestmentTransaction;
+import com.arvind.model.LoanTransaction;
+import com.arvind.model.Quote;
+import com.arvind.model.SavingTransaction;
+
+public class Util {
+	public static void updateParent(List<Account> allAccounts) {
+		Map<Integer, Account> acctIdMap = new HashMap<Integer, Account>();
+		for (Account acct : allAccounts) {
+			acctIdMap.put(acct.getAcctId(), acct);
+		}
+		
+		for (Account acct : allAccounts) {
+			String fullName = getFullName(acct, acctIdMap);
+			acct.setParentAcctName(fullName);
+		}
+	}
+
+	public static String getFullName(Account acct, Map<Integer, Account> acctIdAccount) {
+		String fullName = StringUtils.EMPTY;
+		if (!StringUtils.equals("Root", acct.getAcctName())) {
+			fullName = getFullName(acctIdAccount.get(acct.getParentAcctId()), acctIdAccount) + "/" 
+					+ acct.getAcctName();
+		}
+		return fullName;
+	}
+	
+	public static LocalDate toLocalDate(Timestamp ts) {
+		if (ts == null) {
+			return null;
+		}
+		return ts.toLocalDateTime().toLocalDate();
+	}
+
+	public static Timestamp toTimestamp(LocalDate dt) {
+		if (dt == null) {
+			return null;
+		}
+		return Timestamp.valueOf(dt.atStartOfDay());
+	}
+
+	public static String trimQuotes(String str) {
+		return StringUtils.trimToEmpty(StringUtils.substringBetween(StringUtils.trimToEmpty(str), "\""));
+	}
+
+	public static String trimCommas(String str) {
+	    String regex = "(?<=[\\d])(,)(?=[\\d])";
+	    Pattern p = Pattern.compile(regex);
+	    Matcher m = p.matcher(str);
+	    str = m.replaceAll("");
+	    return str;
+	}
+	
+	public static void updateSavingBalance(List<SavingTransaction> transactions) {
+		BigDecimal balance = new BigDecimal(0);
+		for (SavingTransaction trans : transactions) {
+			balance = balance.add(trans.getTransAmt());
+			trans.setBalanceAmt(balance);
+		}
+		Collections.reverse(transactions);
+	}
+
+	public static void updateCheckingBalance(List<CheckingTransaction> transactions) {
+		BigDecimal balance = new BigDecimal(0);
+		for (CheckingTransaction trans : transactions) {
+			balance = balance.add(trans.getTransAmt());
+			trans.setBalanceAmt(balance);
+		}
+		Collections.reverse(transactions);
+	}
+
+	public static void updateCreditBalance(List<CreditTransaction> transactions) {
+		BigDecimal balance = new BigDecimal(0);
+		for (CreditTransaction trans : transactions) {
+			balance = balance.add(trans.getTransAmt());
+			trans.setBalanceAmt(balance);
+		}
+		Collections.reverse(transactions);
+	}
+
+	public static HashMap<String, BigDecimal> updateInvestmentBalance(List<InvestmentTransaction> transactions) {
+		HashMap<String, BigDecimal> shareBal = new HashMap<>();
+		BigDecimal balance = new BigDecimal(0);
+		for (InvestmentTransaction trans : transactions) {
+			balance = balance.add(trans.getTransAmt());
+			trans.setBalanceAmt(balance);
+			
+			if (StringUtils.isNotBlank(trans.getTicker())) {
+				BigDecimal transQuantity = calculateQuantity(trans);
+				if (shareBal.containsKey(trans.getTicker())) {
+					transQuantity = shareBal.get(trans.getTicker()).add(transQuantity);
+				}
+				shareBal.put(trans.getTicker(), transQuantity);
+				trans.setBalanceQty(transQuantity);
+			}
+		}
+		shareBal.put("Cash", balance);
+		Collections.reverse(transactions);
+		return shareBal;
+	}
+
+	public static void updateLoanBalance(List<LoanTransaction> transactions) {
+		BigDecimal balance = new BigDecimal(0);
+		for (LoanTransaction trans : transactions) {
+			balance = balance.add(trans.getTransAmt());
+			trans.setBalanceAmt(balance);
+		}
+		Collections.reverse(transactions);
+	}
+	
+	public static BigDecimal calculateQuantity(InvestmentTransaction trans) {
+		TransactionType transType = trans.getTransactionType();
+		if (trans.getQuantity() == null || trans.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
+			return BigDecimal.ZERO;
+		}
+		
+		BigDecimal transQuantity = trans.getQuantity().abs();
+		if (isIntegerValue(transQuantity)) {
+			transQuantity = BigDecimal.valueOf(transQuantity.intValue());
+		} else {
+			transQuantity = transQuantity.stripTrailingZeros();
+		}
+		
+		if (transType == TransactionType.REMOVE ||
+			transType == TransactionType.SELL) {
+			transQuantity = transQuantity.multiply(new BigDecimal(-1));
+		}
+		return transQuantity;
+	}
+	
+	public static boolean isIntegerValue(BigDecimal bd) {
+		return bd.signum() == 0 || bd.scale() <= 0 || bd.stripTrailingZeros().scale() <= 0;
+	}
+
+	public static HashMap<String, Pair<Quote, BigDecimal>> getLatestQuotes(List<Quote> recentQuotes) { // , HashMap<String, BigDecimal> changeInPrice, List<Quote> latestQuotes) {
+		HashMap<String, Pair<Quote, BigDecimal>> latestQuotes = new HashMap<>();
+		if (CollectionUtils.isEmpty(recentQuotes)) {
+			return latestQuotes;
+		}
+		
+		Iterator<Quote> iter = recentQuotes.iterator();
+		while (iter.hasNext()) {
+			Quote quote = iter.next();
+			if (latestQuotes.containsKey(quote.getTicker())) {
+				Pair<Quote, BigDecimal> pair = latestQuotes.get(quote.getTicker());
+				Quote recentQuote = pair.getKey();
+				BigDecimal changeInPrice = pair.getValue();
+				if (changeInPrice.compareTo(recentQuote.getPricePs()) == 0) {
+					changeInPrice = changeInPrice.subtract(quote.getPricePs());
+					Pair<Quote, BigDecimal> updatedPair = Pair.of(recentQuote, changeInPrice);
+					latestQuotes.put(quote.getTicker(), updatedPair);
+				}
+			} else {
+				Pair<Quote, BigDecimal> pair = Pair.of(quote, quote.getPricePs());
+				latestQuotes.put(quote.getTicker(), pair);
+			}
+		}
+		return latestQuotes;
+	}
+}
