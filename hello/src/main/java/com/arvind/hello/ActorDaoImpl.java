@@ -33,28 +33,12 @@ public class ActorDaoImpl extends JdbcDaoSupport implements ActorDao {
         customerBkQry = new CustomerBkMappingQuery(dataSource);
     }
 	
-//	@Override
-//	protected void initDao() throws Exception {
-//		customerQry = new CustomerMappingQuery(dataSource);	
-//	}
-//
 	@Override
 	public List<Book> findEmployeeById(int empId) {
 		Map params = new HashMap<>();
 		params.put("id", 10);
 		List<Book> rc = customerQry.executeByNamedParam(params);
 		return rc;
-//        Employee emp = null;
-//        String query = "select * from employee where emp_id=?"; 
-//        Object[] inputs = new Object[] {empId};
-        // getJdbcTemplate().execu
-//        JdbcTemplate jdbcTemplate;
-//        jdbcTemplate.c
-//        MappingSqlQuery<String> qry;
-        // qry.execut
-//        emp = (Employee) getJdbcTemplate().queryForObject(query, inputs, 
-//                                    new BeanPropertyRowMapper(Employee.class));
-//        return emp;
     }
 	
 	@Override
@@ -80,14 +64,6 @@ public class ActorDaoImpl extends JdbcDaoSupport implements ActorDao {
 			book.setTitle(rs.getString("last_name"));
 			return book;
 		}
-//
-//
-//	    public Object mapRow(ResultSet rs, int rowNumber) throws SQLException {
-//	        Customer cust = new Customer();
-//	        cust.setId((Integer) rs.getObject("id"));
-//	        cust.setName(rs.getString("name"));
-//	        return cust;
-//	    } 
 	}
 
 	private class CustomerBkMappingQuery extends MappingSqlQuery<Book> {
