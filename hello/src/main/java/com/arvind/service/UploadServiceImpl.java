@@ -11,11 +11,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +28,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -66,6 +69,7 @@ import com.arvind.repository.CreditTransactionDao;
 import com.arvind.repository.InvestmentTransactionDao;
 import com.arvind.repository.LoanTransactionDao;
 import com.arvind.repository.PayeeMapDao;
+import com.arvind.repository.QuoteDao;
 import com.arvind.repository.SavingTransactionDao;
 import com.arvind.repository.SecurityDao;
 import com.arvind.repository.UploadCheckingTransDao;
@@ -120,6 +124,9 @@ public class UploadServiceImpl implements UploadService {
 	
 	@Autowired
 	SecurityDao securityDao;
+
+	@Autowired
+	QuoteDao quoteDao;
 
 	@Autowired
 	InvestmentService investmentService;
@@ -1921,8 +1928,10 @@ public class UploadServiceImpl implements UploadService {
 		case INVESTMENT:
 			List<InvestmentTransaction> invUpTransactions = uploadInvTransDao.findTransactionsByAcctId(acctId);
 			List<InvestmentTransaction> invTransactions = investmentTransactionDao.findTransactionsByAcctId(acctId);
+			TreeMap<LocalDate, TreeMap<String, BigDecimal>> shareBalanceMap = new TreeMap<>();
 			Util.updateInvestmentBalance(invTransactions);
 			
+			Util.updateInvBalanceByMonth(invTransactions, shareBalanceMap);
 			modelMap.put("transactions", invUpTransactions);
 			modelMap.put("invTransactions", invTransactions);
 			modelMap.put("view", "cash-inv-reconcile-upload");
@@ -3002,6 +3011,12 @@ public class UploadServiceImpl implements UploadService {
 		BigDecimal savBal = BigDecimal.ZERO;
 		BigDecimal creditBal = BigDecimal.ZERO;
 		BigDecimal loanBal = BigDecimal.ZERO;
+		TreeMap<LocalDate, BigDecimal> creditBalHist = new TreeMap<>();
+		TreeMap<LocalDate, BigDecimal> checkingBalHist = new TreeMap<>();
+		TreeMap<LocalDate, BigDecimal> savingsBalHist = new TreeMap<>();
+		TreeMap<LocalDate, BigDecimal> loanBalHist = new TreeMap<>();
+		TreeMap<LocalDate, BigDecimal> invBalHist = new TreeMap<>();
+		
 		for (Account acct : filteredAccounts) {
 			AccountBal bal = new AccountBal();
 			bal.setAcctId(acct.getAcctId());
@@ -3016,23 +3031,23 @@ public class UploadServiceImpl implements UploadService {
 				invBal = invBal.add(bal.getAccountValue());
 				invAccounts.add(bal);
 			} else if (acct.getAcctType() == AccountType.CHECKING) {
-				checkingTransactionDao.getAccountBalance(bal, acct.getAcctId());
+				Util.updateCheckingBalHist(checkingBalHist, checkingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 				netBal = netBal.add(bal.getAccountValue());
 				chkBal = chkBal.add(bal.getAccountValue());
 				chkAccounts.add(bal);
 			} else if (acct.getAcctType() == AccountType.CREDIT) {
-				creditTransactionDao.getAccountBalance(bal, acct.getAcctId());
+				Util.updateCreditBalHist(creditBalHist, creditTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 				netBal = netBal.add(bal.getAccountValue());
 				creditBal = creditBal.add(bal.getAccountValue());
 				cardAccounts.add(bal);
 			} else if (acct.getAcctType() == AccountType.SAVINGS) {
-				savingTransactionDao.getAccountBalance(bal, acct.getAcctId());
+				Util.updateSavingBalHist(savingsBalHist, savingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 				netBal = netBal.add(bal.getAccountValue());
 				savBal = savBal.add(bal.getAccountValue());
 				savAccounts.add(bal);
 			} else if (acct.getAcctType() == AccountType.AUTOLOAN ||
 					acct.getAcctType() == AccountType.MORTGAGE) {
-				loanTransactionDao.getAccountBalance(bal, acct.getAcctId());
+				Util.updateLoanBalHist(loanBalHist, loanTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 				netBal = netBal.add(bal.getAccountValue());
 				loanBal = loanBal.add(bal.getAccountValue());
 				loanAccounts.add(bal);
@@ -3053,6 +3068,90 @@ public class UploadServiceImpl implements UploadService {
 		return netBalance;
 	}
 
+	
+	@Override
+	public Map<AccountType, Object> getHistoricalBalance() {
+		Map<AccountType, Object> netBalance = new HashMap<>();
+		
+		List<Integer> acctTypes = new ArrayList<>();
+		acctTypes.add(AccountType.CHECKING.getCode());
+		acctTypes.add(AccountType.CREDIT.getCode());
+		acctTypes.add(AccountType.SAVINGS.getCode());
+		acctTypes.add(AccountType.INVESTMENT.getCode());
+		acctTypes.add(AccountType.AUTOLOAN.getCode());
+		acctTypes.add(AccountType.MORTGAGE.getCode());
+		List<Account> filteredAccounts = accountDao.findAccountsByType(acctTypes);
+		if (CollectionUtils.isEmpty(filteredAccounts)) {
+			return netBalance;
+		}
+		
+		TreeMap<LocalDate, BigDecimal> creditBalHist = new TreeMap<>();
+		TreeMap<LocalDate, BigDecimal> checkingBalHist = new TreeMap<>();
+		TreeMap<LocalDate, BigDecimal> savingsBalHist = new TreeMap<>();
+		TreeMap<LocalDate, BigDecimal> loanBalHist = new TreeMap<>();
+		TreeMap<LocalDate, BigDecimal> invBalHist = new TreeMap<>();
+		
+		for (Account acct : filteredAccounts) {
+			AccountBal bal = new AccountBal();
+			bal.setAcctId(acct.getAcctId());
+			bal.setAcctName(acct.getAcctName());
+			bal.setAcctType(acct.getAcctType());
+			bal.setParentAcctId(acct.getAcctId());
+			bal.setParentAcctName(acct.getParentAcctName());
+			bal.setStatus(acct.getStatus());
+			if (acct.getAcctType() == AccountType.INVESTMENT) {
+				TreeMap<LocalDate, TreeMap<String, BigDecimal>> shareBalanceMap = new TreeMap<>();
+				List<InvestmentTransaction> invTransactions = investmentTransactionDao.findTransactionsByAcctId(acct.getAcctId());
+				TreeMap<LocalDate, BigDecimal> invDateBal = Util.updateInvBalanceByMonth(invTransactions, shareBalanceMap);
+				BigDecimal ignoreDecimal = new BigDecimal(0.5);
+				for (LocalDate currentDt : invDateBal.keySet()) {
+					TreeMap<LocalDate, BigDecimal> dateAcctBal = new TreeMap<>();
+					BigDecimal cashBal = invDateBal.get(currentDt);
+					BigDecimal dateVal = cashBal;
+					if (!shareBalanceMap.containsKey(currentDt)) continue;
+					TreeMap<String, BigDecimal> shareBal = shareBalanceMap.get(currentDt);
+					if (shareBal == null) continue;
+					for (String tckr : shareBal.keySet()) {
+						BigDecimal currentQty = shareBal.get(tckr);
+						BigDecimal currentQuote = BigDecimal.ONE;
+						if (currentQty.compareTo(ignoreDecimal) < 0) continue;
+						List<Quote> quotes = quoteDao.findQuoteByTickerDate(tckr, currentDt);
+						if (CollectionUtils.isEmpty(quotes)) {
+							System.out.println("Add Missing Quote for Date " + currentDt + " for " + tckr);
+						} else {
+							currentQuote = quotes.get(0).getPricePs();
+						}
+						BigDecimal positionVal = currentQuote.multiply(currentQty);
+						dateVal = dateVal.add(positionVal);
+					}
+					dateAcctBal.put(currentDt, dateVal);
+					Util.updateInvBalHist(invBalHist, dateAcctBal);
+				}
+//				bal = investmentService.getPositions(acct.getAcctName());
+//				netBal = netBal.add(bal.getAccountValue());
+//				invBal = invBal.add(bal.getAccountValue());
+//				invAccounts.add(bal);
+			} else if (acct.getAcctType() == AccountType.CHECKING) {
+				Util.updateCheckingBalHist(checkingBalHist, checkingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+			} else if (acct.getAcctType() == AccountType.CREDIT) {
+				Util.updateCreditBalHist(creditBalHist, creditTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+			} else if (acct.getAcctType() == AccountType.SAVINGS) {
+				Util.updateSavingBalHist(savingsBalHist, savingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+			} else if (acct.getAcctType() == AccountType.AUTOLOAN ||
+					acct.getAcctType() == AccountType.MORTGAGE) {
+				Util.updateLoanBalHist(loanBalHist, loanTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+			}
+			System.out.println("Account : " + acct.getAcctName() + " Cash : " + bal.getBalanceAmt() + " Acct Val : " + bal.getAccountValue());
+		}
+		netBalance.put(AccountType.CHECKING, checkingBalHist);
+		netBalance.put(AccountType.CREDIT, creditBalHist);
+		netBalance.put(AccountType.SAVINGS, savingsBalHist);
+		netBalance.put(AccountType.MORTGAGE, loanBalHist);
+		netBalance.put(AccountType.INVESTMENT, invBalHist);
+		return netBalance;
+	}
+
+	
 	public void updateAcctBalRecursive(HashMap<Integer, BigDecimal> acctIdBalMap, int acctId, BigDecimal acctVal, 
 			HashMap<Integer, Account> idAcctMap) {
 		BigDecimal currAcctVal = BigDecimal.ZERO;

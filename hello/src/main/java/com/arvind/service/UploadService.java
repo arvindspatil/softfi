@@ -12,6 +12,7 @@ import com.arvind.model.CreditTransaction;
 import com.arvind.model.InvestmentTransaction;
 import com.arvind.model.LoanTransaction;
 import com.arvind.model.SavingTransaction;
+import com.arvind.util.AccountType;
 
 public interface UploadService {
 	public Map<String, Object> uploadTransactions(MultipartFile file, String acctName);
@@ -34,5 +35,6 @@ public interface UploadService {
 //	public Map<String, Object> getAccountBalance(String acctName) ;
 	public Map<String, Object> addQuote();
 	public Map<String, Object> getNetBalance();
+	public Map<AccountType, Object> getHistoricalBalance();
 	public void doNetBalance(HttpServletResponse resonse) throws IOException;
 }

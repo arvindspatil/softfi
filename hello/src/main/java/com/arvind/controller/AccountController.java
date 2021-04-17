@@ -1141,6 +1141,7 @@ public class AccountController {
 		Map<String, Object> modelMap = uploadService.getNetBalance();
 //		uploadService.doNetBalance();
 		model.addAllAttributes(modelMap);
+		Util.startDateReport();
 	    return "cash-portfolio";
 	}
 

@@ -1,10 +1,11 @@
 package com.arvind.model.json;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class ChartDataset {
 
-	private List<Integer> data;
+	private List<BigDecimal> data;
 	
 	private String label;
 	
@@ -18,11 +19,11 @@ public class ChartDataset {
 	
 	private String pointBackgroundColor;
 
-	public List<Integer> getData() {
+	public List<BigDecimal> getData() {
 		return data;
 	}
 
-	public void setData(List<Integer> data) {
+	public void setData(List<BigDecimal> data) {
 		this.data = data;
 	}
 

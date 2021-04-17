@@ -1,8 +1,10 @@
 package com.arvind.controller;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
@@ -16,6 +18,8 @@ import com.arvind.model.json.ChartData;
 import com.arvind.model.json.ChartDataset;
 import com.arvind.model.json.ChartLabels;
 import com.arvind.repository.AccountDao;
+import com.arvind.service.UploadService;
+import com.arvind.util.AccountType;
 import com.arvind.util.Util;
 
 @CrossOrigin(origins = "http://localhost:3000")
@@ -25,6 +29,9 @@ public class RestAccountController {
 
 	@Autowired
 	AccountDao accountDao;
+
+	@Autowired
+	UploadService uploadService;
 
 	@GetMapping ("/allaccounts")
 	public List<Account> handleAllAccounts(Model model) {
@@ -38,26 +45,18 @@ public class RestAccountController {
 		
 		ChartData chartData = new ChartData();
 		
-		ChartLabels labels = new ChartLabels();
-		List<String> labelList = new ArrayList<>();
-		labelList.add("Sunday");
-		labelList.add("Monday");
-		labelList.add("Tuesday");
-		labelList.add("Wednesday");
-		labelList.add("Thursday");
-		labelList.add("Friday");
-		labelList.add("Saturday");
-		labels.setLabels(labelList);
+		List<String> labelList = Util.getChartKeys();
 		
 		chartData.setLabels(labelList);
 		
 		List<ChartDataset> datasets = new ArrayList<>();
+
+		Map<AccountType, Object> histMap = uploadService.getHistoricalBalance();
+		List<BigDecimal> checkingData = Util.filterByType(AccountType.CHECKING, histMap);
 		
 		ChartDataset bankingDataset = new ChartDataset();
-		List<Integer> datalist = new ArrayList<Integer>(
-				Arrays.asList(15339, 21345, 18483, 24003, 23489, 24092, 18000));
-		bankingDataset.setData(datalist);
-		bankingDataset.setLabel("Banking");
+		bankingDataset.setData(checkingData);
+		bankingDataset.setLabel(AccountType.CHECKING.name());
 		bankingDataset.setLineTension(0);
 		bankingDataset.setBackgroundColor("transparent");
 		bankingDataset.setBorderColor("blue");
@@ -66,17 +65,49 @@ public class RestAccountController {
 		datasets.add(bankingDataset);
 
 		ChartDataset cardDataset = new ChartDataset();
-		List<Integer> cardDatalist = new ArrayList<Integer>(
-				Arrays.asList(10339, 11345, 13483, 20003, 22489, 21092, 19000));
-		cardDataset.setData(cardDatalist);
-		cardDataset.setLabel("Credit Card");
+		List<BigDecimal> cardData = Util.filterByType(AccountType.CREDIT, histMap);
+		cardDataset.setData(cardData);
+		cardDataset.setLabel(AccountType.CREDIT.name());
 		cardDataset.setLineTension(0);
 		cardDataset.setBackgroundColor("transparent");
 		cardDataset.setBorderColor("red");
 		cardDataset.setPointBackgroundColor("red");
 		cardDataset.setBorderWidth(4);
 		datasets.add(cardDataset);
-		
+
+		ChartDataset savDataset = new ChartDataset();
+		List<BigDecimal> savData = Util.filterByType(AccountType.SAVINGS, histMap);
+		savDataset.setData(savData);
+		savDataset.setLabel(AccountType.SAVINGS.name());
+		savDataset.setLineTension(0);
+		savDataset.setBackgroundColor("transparent");
+		savDataset.setBorderColor("yellow");
+		savDataset.setPointBackgroundColor("yellow");
+		savDataset.setBorderWidth(4);
+		datasets.add(savDataset);
+
+		ChartDataset loanDataset = new ChartDataset();
+		List<BigDecimal> loanData = Util.filterByType(AccountType.MORTGAGE, histMap);
+		loanDataset.setData(loanData);
+		loanDataset.setLabel(AccountType.MORTGAGE.name());
+		loanDataset.setLineTension(0);
+		loanDataset.setBackgroundColor("transparent");
+		loanDataset.setBorderColor("green");
+		loanDataset.setPointBackgroundColor("green");
+		loanDataset.setBorderWidth(4);
+		datasets.add(loanDataset);
+
+		ChartDataset invDataset = new ChartDataset();
+		List<BigDecimal> invData = Util.filterByType(AccountType.INVESTMENT, histMap);
+		invDataset.setData(invData);
+		invDataset.setLabel(AccountType.INVESTMENT.name());
+		invDataset.setLineTension(0);
+		invDataset.setBackgroundColor("transparent");
+		invDataset.setBorderColor("orange");
+		invDataset.setPointBackgroundColor("orange");
+		invDataset.setBorderWidth(4);
+		datasets.add(invDataset);
+
 		chartData.setDatasets(datasets);
 
 		return chartData;

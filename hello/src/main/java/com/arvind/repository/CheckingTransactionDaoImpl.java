@@ -4,9 +4,11 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
@@ -22,6 +24,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.arvind.model.AccountBal;
 import com.arvind.model.CheckingTransaction;
+import com.arvind.model.CreditTransaction;
 import com.arvind.util.Util;
 
 @Repository
@@ -169,14 +172,20 @@ public class CheckingTransactionDaoImpl extends JdbcDaoSupport implements Checki
 	}
 
 	@Override
-	public void getAccountBalance(AccountBal bal, int acctId) {
+	public TreeMap<LocalDate, BigDecimal> getAccountBalance(AccountBal bal, int acctId) {
+		TreeMap<LocalDate, BigDecimal> balanceMap = new TreeMap<>();
 		List<CheckingTransaction> transactions = findTransactionsByAcctId(acctId);
 		if (CollectionUtils.isEmpty(transactions)) {
 			bal.setBalanceAmt(BigDecimal.ZERO);
 		} else {
-			Util.updateCheckingBalance(transactions);
+			balanceMap = Util.updateCheckingBalanceByMonth(transactions);
+			for (Map.Entry<LocalDate, BigDecimal> entry : balanceMap.entrySet()) {
+				System.out.println(entry.getKey() + "/" + entry.getValue());
+			}
 			bal.setBalanceAmt(transactions.get(0).getBalanceAmt());			
 		}
 		bal.setAccountValue(bal.getBalanceAmt());
+		return balanceMap;
 	}
+	
 }

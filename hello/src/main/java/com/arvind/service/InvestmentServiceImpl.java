@@ -2,16 +2,19 @@ package com.arvind.service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
@@ -28,8 +31,10 @@ import com.arvind.hello.QuoteListDeserializer;
 import com.arvind.model.Account;
 import com.arvind.model.AccountBal;
 import com.arvind.model.AccountPosition;
+import com.arvind.model.CheckingTransaction;
 import com.arvind.model.InvestmentTransaction;
 import com.arvind.model.Quote;
+import com.arvind.model.SavingTransaction;
 import com.arvind.model.Security;
 import com.arvind.repository.AccountDao;
 import com.arvind.repository.AccountPositionDao;
@@ -516,7 +521,8 @@ public class InvestmentServiceImpl implements InvestmentService {
 				changeInPositionVal = changeInPositionVal.setScale(2, BigDecimal.ROUND_HALF_UP);
 				position.setChangeInValue(changeInPositionVal);
 
-				currentQuote = currentQuote.setScale(2, BigDecimal.ROUND_HALF_UP);
+				// currentQuote = currentQuote.setScale(2, BigDecimal.ROUND_HALF_UP);
+				currentQuote = currentQuote.setScale(2, RoundingMode.HALF_UP);
 				position.setCurrentQuote(currentQuote);
 
 				currentQty = currentQty.setScale(3, BigDecimal.ROUND_HALF_UP);
@@ -534,5 +540,43 @@ public class InvestmentServiceImpl implements InvestmentService {
 		balance.setChangeInPositionsValue(acctPosValChange.setScale(2, BigDecimal.ROUND_HALF_UP));
 		return balance;
 	}
+
+//	public TreeMap<LocalDate, BigDecimal> getAccountBalance1(AccountBal bal, int acctId) {
+//		TreeMap<LocalDate, BigDecimal> balanceMap = new TreeMap<>();
+//		List<CheckingTransaction> transactions = findTransactionsByAcctId(acctId);
+//		if (CollectionUtils.isEmpty(transactions)) {
+//			bal.setBalanceAmt(BigDecimal.ZERO);
+//		} else {
+//			balanceMap = Util.updateCheckingBalanceByMonth(transactions);
+//			for (Map.Entry<LocalDate, BigDecimal> entry : balanceMap.entrySet()) {
+//				System.out.println(entry.getKey() + "/" + entry.getValue());
+//			}
+//			bal.setBalanceAmt(transactions.get(0).getBalanceAmt());			
+//		}
+//		bal.setAccountValue(bal.getBalanceAmt());
+//		return balanceMap;
+//	}
+
+//	public static HashMap<String, BigDecimal> updateInvestmentBalance(List<InvestmentTransaction> transactions) {
+//		HashMap<String, BigDecimal> shareBal = new HashMap<>();
+//		BigDecimal balance = new BigDecimal(0);
+//		for (InvestmentTransaction trans : transactions) {
+//			balance = balance.add(trans.getTransAmt());
+//			trans.setBalanceAmt(balance);
+//			
+//			if (StringUtils.isNotBlank(trans.getTicker())) {
+//				BigDecimal transQuantity = calculateQuantity(trans);
+//				if (shareBal.containsKey(trans.getTicker())) {
+//					transQuantity = shareBal.get(trans.getTicker()).add(transQuantity);
+//				}
+//				shareBal.put(trans.getTicker(), transQuantity);
+//				trans.setBalanceQty(transQuantity);
+//			}
+//		}
+//		shareBal.put("Cash", balance);
+//		Collections.reverse(transactions);
+//		return shareBal;
+//	}
+
 
 }
