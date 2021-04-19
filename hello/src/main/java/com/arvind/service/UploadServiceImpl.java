@@ -1931,7 +1931,7 @@ public class UploadServiceImpl implements UploadService {
 			TreeMap<LocalDate, TreeMap<String, BigDecimal>> shareBalanceMap = new TreeMap<>();
 			Util.updateInvestmentBalance(invTransactions);
 			
-			Util.updateInvBalanceByMonth(invTransactions, shareBalanceMap);
+//			Util.updateInvBalanceByMonth(invTransactions, shareBalanceMap);
 			modelMap.put("transactions", invUpTransactions);
 			modelMap.put("invTransactions", invTransactions);
 			modelMap.put("view", "cash-inv-reconcile-upload");
@@ -3031,23 +3031,23 @@ public class UploadServiceImpl implements UploadService {
 				invBal = invBal.add(bal.getAccountValue());
 				invAccounts.add(bal);
 			} else if (acct.getAcctType() == AccountType.CHECKING) {
-				Util.updateCheckingBalHist(checkingBalHist, checkingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+				Util.updateBalanceHistory(checkingBalHist, checkingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 				netBal = netBal.add(bal.getAccountValue());
 				chkBal = chkBal.add(bal.getAccountValue());
 				chkAccounts.add(bal);
 			} else if (acct.getAcctType() == AccountType.CREDIT) {
-				Util.updateCreditBalHist(creditBalHist, creditTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+				Util.updateBalanceHistory(creditBalHist, creditTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 				netBal = netBal.add(bal.getAccountValue());
 				creditBal = creditBal.add(bal.getAccountValue());
 				cardAccounts.add(bal);
 			} else if (acct.getAcctType() == AccountType.SAVINGS) {
-				Util.updateSavingBalHist(savingsBalHist, savingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+				Util.updateBalanceHistory(savingsBalHist, savingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 				netBal = netBal.add(bal.getAccountValue());
 				savBal = savBal.add(bal.getAccountValue());
 				savAccounts.add(bal);
 			} else if (acct.getAcctType() == AccountType.AUTOLOAN ||
 					acct.getAcctType() == AccountType.MORTGAGE) {
-				Util.updateLoanBalHist(loanBalHist, loanTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+				Util.updateBalanceHistory(loanBalHist, loanTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 				netBal = netBal.add(bal.getAccountValue());
 				loanBal = loanBal.add(bal.getAccountValue());
 				loanAccounts.add(bal);
@@ -3090,7 +3090,7 @@ public class UploadServiceImpl implements UploadService {
 		TreeMap<LocalDate, BigDecimal> savingsBalHist = new TreeMap<>();
 		TreeMap<LocalDate, BigDecimal> loanBalHist = new TreeMap<>();
 		TreeMap<LocalDate, BigDecimal> invBalHist = new TreeMap<>();
-		
+		LocalDate aprilDt = LocalDate.now().withDayOfMonth(1).plusMonths(1);
 		for (Account acct : filteredAccounts) {
 			AccountBal bal = new AccountBal();
 			bal.setAcctId(acct.getAcctId());
@@ -3100,6 +3100,7 @@ public class UploadServiceImpl implements UploadService {
 			bal.setParentAcctName(acct.getParentAcctName());
 			bal.setStatus(acct.getStatus());
 			if (acct.getAcctType() == AccountType.INVESTMENT) {
+//				if (acct.getAcctId() != 46) continue;
 				TreeMap<LocalDate, TreeMap<String, BigDecimal>> shareBalanceMap = new TreeMap<>();
 				List<InvestmentTransaction> invTransactions = investmentTransactionDao.findTransactionsByAcctId(acct.getAcctId());
 				TreeMap<LocalDate, BigDecimal> invDateBal = Util.updateInvBalanceByMonth(invTransactions, shareBalanceMap);
@@ -3115,39 +3116,36 @@ public class UploadServiceImpl implements UploadService {
 						BigDecimal currentQty = shareBal.get(tckr);
 						BigDecimal currentQuote = BigDecimal.ONE;
 						if (currentQty.compareTo(ignoreDecimal) < 0) continue;
-						List<Quote> quotes = quoteDao.findQuoteByTickerDate(tckr, currentDt);
-						if (CollectionUtils.isEmpty(quotes)) {
-							System.out.println("Add Missing Quote for Date " + currentDt + " for " + tckr);
-						} else {
+						List<Quote> quotes = quoteDao.findNearestQuoteByTickerDate(tckr, currentDt);
+						if (!CollectionUtils.isEmpty(quotes)) {
 							currentQuote = quotes.get(0).getPricePs();
 						}
 						BigDecimal positionVal = currentQuote.multiply(currentQty);
 						dateVal = dateVal.add(positionVal);
 					}
 					dateAcctBal.put(currentDt, dateVal);
-					Util.updateInvBalHist(invBalHist, dateAcctBal);
+					Util.updateBalanceHistory(invBalHist, dateAcctBal);
 				}
-//				bal = investmentService.getPositions(acct.getAcctName());
-//				netBal = netBal.add(bal.getAccountValue());
-//				invBal = invBal.add(bal.getAccountValue());
-//				invAccounts.add(bal);
 			} else if (acct.getAcctType() == AccountType.CHECKING) {
-				Util.updateCheckingBalHist(checkingBalHist, checkingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+				Util.updateBalanceHistory(checkingBalHist, checkingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 			} else if (acct.getAcctType() == AccountType.CREDIT) {
-				Util.updateCreditBalHist(creditBalHist, creditTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+				Util.updateBalanceHistory(creditBalHist, creditTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 			} else if (acct.getAcctType() == AccountType.SAVINGS) {
-				Util.updateSavingBalHist(savingsBalHist, savingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+				Util.updateBalanceHistory(savingsBalHist, savingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 			} else if (acct.getAcctType() == AccountType.AUTOLOAN ||
 					acct.getAcctType() == AccountType.MORTGAGE) {
-				Util.updateLoanBalHist(loanBalHist, loanTransactionDao.getAccountBalance(bal, acct.getAcctId()));
+				Util.updateBalanceHistory(loanBalHist, loanTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 			}
-			System.out.println("Account : " + acct.getAcctName() + " Cash : " + bal.getBalanceAmt() + " Acct Val : " + bal.getAccountValue());
 		}
+		TreeMap<LocalDate, BigDecimal> netBalHist = Util.updateNetBalanceHistory(checkingBalHist, savingsBalHist, creditBalHist, loanBalHist, invBalHist);
+
 		netBalance.put(AccountType.CHECKING, checkingBalHist);
 		netBalance.put(AccountType.CREDIT, creditBalHist);
 		netBalance.put(AccountType.SAVINGS, savingsBalHist);
 		netBalance.put(AccountType.MORTGAGE, loanBalHist);
 		netBalance.put(AccountType.INVESTMENT, invBalHist);
+		netBalance.put(AccountType.NET, netBalHist);
+		Util.updateMissingBalanceHistory(invBalHist);
 		return netBalance;
 	}
 

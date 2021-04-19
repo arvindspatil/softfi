@@ -8,9 +8,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,6 +41,47 @@ public class Util {
 			acct.setParentAcctName(fullName);
 		}
 	}
+	
+	public static List<Quote> filterByDates(List<Quote> quotes, LocalDate startDate) {
+		TreeMap<LocalDate, Quote> dateQuotes = new TreeMap<>();
+		TreeMap<LocalDate, Quote> lastOfMonthQuotes = new TreeMap<>();
+		TreeMap<LocalDate, Quote> firstOfMonthQuotes = new TreeMap<>();
+		TreeMap<LocalDate, Quote> filteredQuotes = new TreeMap<>();
+		
+		LocalDate todayDt = LocalDate.now();
+		LocalDate firstOfMonth = todayDt.withDayOfMonth(1);
+		for (LocalDate currentDt : dateQuotes.keySet()) {
+			if (currentDt.compareTo(firstOfMonth) <= 0) continue;
+			filteredQuotes.put(currentDt, dateQuotes.get(currentDt));
+		}
+		
+		for (Quote quote : quotes) {
+			dateQuotes.put(quote.getQuoteDate(), quote);
+		}
+
+		for (LocalDate lastDt : dateQuotes.keySet()) {
+			if (lastDt.compareTo(startDate) < 0) continue;
+			LocalDate lastDateOfMth = lastDt.withDayOfMonth(lastDt.lengthOfMonth());
+			lastOfMonthQuotes.put(lastDateOfMth, dateQuotes.get(lastDt));
+		}
+
+		for (LocalDate firstDt : dateQuotes.descendingKeySet()) {
+			if (firstDt.compareTo(startDate) < 0) continue;
+			LocalDate firstDateOfMth = firstDt.withDayOfMonth(1);
+			firstOfMonthQuotes.put(firstDateOfMth, dateQuotes.get(firstDt));
+		}
+
+		filteredQuotes.putAll(lastOfMonthQuotes); //.values());
+		filteredQuotes.putAll(firstOfMonthQuotes); // .values());
+		
+//		for (Quote quote : filteredQuotes) {
+//			System.out.println("Date/Ticker/Value: "
+//				+ quote.getQuoteDate() + "/"
+//				+ quote.getTicker() + "/"
+//				+ quote.getPricePs());
+//		}
+		return new ArrayList(filteredQuotes.values());		
+	}
 
 	public static List<BigDecimal> filterByType(AccountType acctType, Map<AccountType, Object> data) {
 		List<BigDecimal> acctBals = new ArrayList<>();
@@ -47,7 +90,7 @@ public class Util {
 		int limit = 12;
 		int idx = 0;
 		for (LocalDate keyDt : acctData.descendingKeySet()) {
-			System.out.println(keyDt + "/" + acctData.get(keyDt));
+//			System.out.println(keyDt + "/" + acctData.get(keyDt));
 			acctBals.add(acctData.get(keyDt));
 			idx++;
 			if (idx > limit) break;
@@ -78,32 +121,71 @@ public class Util {
 		return fullName;
 	}
 	
-	public static void updateCreditBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
+	public static void updateBalanceHistory(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
 		for (Map.Entry<LocalDate, BigDecimal> entry : acctHist.entrySet()) {
 			if (netHist.containsKey(entry.getKey())) {
 				netHist.put(entry.getKey(), netHist.get(entry.getKey()).add(entry.getValue()));
 			} else {
 				netHist.put(entry.getKey(), entry.getValue());
 			}
-			System.out.println(entry.getKey() + "/" + entry.getValue());
+//			System.out.println(entry.getKey() + "/" + entry.getValue());
 		}
 	}
 
-	public static void updateInvBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
-		updateCreditBalHist(netHist, acctHist);
+	public static TreeMap<LocalDate, BigDecimal> updateNetBalanceHistory(
+			TreeMap<LocalDate, BigDecimal> checkingBalHist,
+			TreeMap<LocalDate, BigDecimal> savingsBalHist, 
+			TreeMap<LocalDate, BigDecimal> creditBalHist, 
+			TreeMap<LocalDate, BigDecimal> loanBalHist, 
+			TreeMap<LocalDate, BigDecimal> invBalHist) {
+		TreeMap<LocalDate, BigDecimal> netBalHist = new TreeMap<>();
+		for (LocalDate idxDt : checkingBalHist.keySet()) {
+			BigDecimal netBal = BigDecimal.ZERO;
+			netBal = netBal.add(checkingBalHist.get(idxDt))
+					.add(savingsBalHist.containsKey(idxDt) ? savingsBalHist.get(idxDt) : BigDecimal.ZERO)
+					.add(creditBalHist.containsKey(idxDt) ? creditBalHist.get(idxDt) : BigDecimal.ZERO)
+					.add(loanBalHist.containsKey(idxDt) ? loanBalHist.get(idxDt) : BigDecimal.ZERO)
+					.add(invBalHist.containsKey(idxDt) ? invBalHist.get(idxDt) : BigDecimal.ZERO);
+			netBalHist.put(idxDt, netBal);					
+		}
+		return netBalHist;
+	}
+	
+	public static void updateMissingBalanceHistory(TreeMap<LocalDate, BigDecimal> netHist) {
+		LocalDate currentDt = LocalDate.now().withDayOfMonth(1).plusMonths(1);
+		LocalDate idxDt = netHist.firstKey();
+		while (idxDt.compareTo(currentDt) <= 0) {
+			if (!netHist.containsKey(idxDt)) {
+				LocalDate prevDt = idxDt.minusMonths(1);
+				netHist.put(idxDt, netHist.get(prevDt));
+			}
+			idxDt = idxDt.plusMonths(1);
+		}
+		for (Map.Entry<LocalDate, BigDecimal> entry : netHist.entrySet()) {
+//			if (netHist.containsKey(entry.getKey())) {
+//				netHist.put(entry.getKey(), netHist.get(entry.getKey()).add(entry.getValue()));
+//			} else {
+//				netHist.put(entry.getKey(), entry.getValue());
+//			}
+//			System.out.println(entry.getKey() + "/" + entry.getValue());
+		}
 	}
 
-	public static void updateCheckingBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
-		updateCreditBalHist(netHist, acctHist);
-	}
-
-	public static void updateSavingBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
-		updateCreditBalHist(netHist, acctHist);
-	}
-
-	public static void updateLoanBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
-		updateCreditBalHist(netHist, acctHist);
-	}
+//	public static void updateInvBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
+//		updateCreditBalHist(netHist, acctHist);
+//	}
+//
+//	public static void updateCheckingBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
+//		updateCreditBalHist(netHist, acctHist);
+//	}
+//
+//	public static void updateSavingBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
+//		updateCreditBalHist(netHist, acctHist);
+//	}
+//
+//	public static void updateLoanBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
+//		updateCreditBalHist(netHist, acctHist);
+//	}
 
 	public static LocalDate toLocalDate(Timestamp ts) {
 		if (ts == null) {
@@ -115,8 +197,8 @@ public class Util {
 	public static LocalDate startDateReport() {
 		LocalDate todayDt = LocalDate.now();
 		LocalDate startDt = todayDt.withDayOfMonth(1).minusMonths(12);
-		System.out.println("Start Date = " + startDt);
-		System.out.println("Start Month = " + todayDt.getMonth());
+//		System.out.println("Start Date = " + startDt);
+//		System.out.println("Start Month = " + todayDt.getMonth());
 		return startDt;
 	}
 	
@@ -295,10 +377,8 @@ public class Util {
 	}
 	
 	public static TreeMap<LocalDate, BigDecimal> updateInvBalanceByMonth(List<InvestmentTransaction> transactions, TreeMap<LocalDate, TreeMap<String, BigDecimal>> shareBalanceMap) {
-//		Collections.reverse(transactions);
 		
 		TreeMap<LocalDate, BigDecimal> balanceMap = new TreeMap<>();
-		// TreeMap<LocalDate, TreeMap<String, BigDecimal>> shareBalanceMap = new TreeMap<>();
 		
 		HashMap<String, BigDecimal> shareBal = new HashMap<>();
 		BigDecimal balance = new BigDecimal(0);
@@ -328,29 +408,25 @@ public class Util {
 		shareBal.put("Cash", balance);
 		Collections.reverse(transactions);
 
-		for (LocalDate dt : balanceMap.keySet()) {
-			System.out.println("Key/Value = " + dt + "/" + balanceMap.get(dt));
-		}
-
-		for (LocalDate dt : shareBalanceMap.keySet()) {
-			System.out.println("Share Key = " + dt);
-			TreeMap<String, BigDecimal> sbalmap = shareBalanceMap.get(dt);
-			for (String tckr : sbalmap.keySet()) {
-				System.out.println("Tckr/Qty : " + tckr + "/" + sbalmap.get(tckr));
+		LocalDate currentDt = LocalDate.now().withDayOfMonth(1).plusMonths(1);
+		LocalDate idxDt = balanceMap.firstKey();
+		while (idxDt.compareTo(currentDt) <= 0) {
+			LocalDate prevDt = idxDt.minusMonths(1);
+			if (!balanceMap.containsKey(idxDt)) {
+				balanceMap.put(idxDt, balanceMap.get(prevDt));
 			}
+
+			if (!shareBalanceMap.containsKey(idxDt)) {
+				TreeMap<String, BigDecimal> prevTickerMap = shareBalanceMap.get(prevDt);
+				TreeMap<String, BigDecimal> tickerMap = new TreeMap<>();
+				tickerMap.putAll(prevTickerMap);
+				shareBalanceMap.put(idxDt, tickerMap);
+			}
+			
+			idxDt = idxDt.plusMonths(1);
 		}
-
+		
 		return balanceMap;
-
-		
-		
-//		BigDecimal balance = new BigDecimal(0);
-//		for (SavingTransaction trans : transactions) {
-//			balance = balance.add(trans.getTransAmt());
-//			trans.setBalanceAmt(balance);
-//			balanceMap.put(trans.getTransDate().plusMonths(1).withDayOfMonth(1), trans.getBalanceAmt());
-//		}
-//		Collections.reverse(transactions);
 	}
 
 }

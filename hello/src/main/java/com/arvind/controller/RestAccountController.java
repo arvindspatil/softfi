@@ -108,6 +108,17 @@ public class RestAccountController {
 		invDataset.setBorderWidth(4);
 		datasets.add(invDataset);
 
+		ChartDataset netDataset = new ChartDataset();
+		List<BigDecimal> netData = Util.filterByType(AccountType.NET, histMap);
+		netDataset.setData(netData);
+		netDataset.setLabel(AccountType.NET.name());
+		netDataset.setLineTension(0);
+		netDataset.setBackgroundColor("transparent");
+		netDataset.setBorderColor("indigo");
+		netDataset.setPointBackgroundColor("indigo");
+		netDataset.setBorderWidth(4);
+		datasets.add(netDataset);
+
 		chartData.setDatasets(datasets);
 
 		return chartData;

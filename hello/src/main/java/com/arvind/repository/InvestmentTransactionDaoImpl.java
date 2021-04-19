@@ -3,6 +3,7 @@ package com.arvind.repository;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ public class InvestmentTransactionDaoImpl extends JdbcDaoSupport implements Inve
 	private TransactionsQuery transactionsQuery;
 	private TransactionsByAcctIdQuery transactionsByAcctIdQuery;
 	private TransactionsByAcctNameQuery transactionsByAcctNameQuery;
+	private TransactionsSinceDateQuery transactionsSinceDateQuery;
 	private Insert insertQry;
 	private Delete deleteQry;
 	
@@ -40,6 +42,7 @@ public class InvestmentTransactionDaoImpl extends JdbcDaoSupport implements Inve
         transactionsQuery = new TransactionsQuery(dataSource);
         transactionsByAcctIdQuery = new TransactionsByAcctIdQuery(dataSource);
         transactionsByAcctNameQuery = new TransactionsByAcctNameQuery(dataSource);
+        transactionsSinceDateQuery = new TransactionsSinceDateQuery(dataSource);
         insertQry = new Insert(dataSource);
         deleteQry = new Delete(dataSource);
     }
@@ -84,6 +87,13 @@ public class InvestmentTransactionDaoImpl extends JdbcDaoSupport implements Inve
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("acctName", acctName);
 		return transactionsByAcctNameQuery.executeByNamedParam(params);
+	}
+
+	@Override
+	public List<InvestmentTransaction> findTransactionsSinceDate(LocalDate startDt) {
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("transDate", Util.toTimestamp(startDt));
+		return transactionsSinceDateQuery.executeByNamedParam(params);
 	}
 
 	private class BaseQuery extends MappingSqlQuery<InvestmentTransaction> {
@@ -132,6 +142,19 @@ public class InvestmentTransactionDaoImpl extends JdbcDaoSupport implements Inve
 					"where b.acct_name in (:acctName) " +
 					"order by a.trans_date");
 			declareParameter(new SqlParameter("acctName", Types.VARCHAR));
+			compile();
+		}
+	}
+
+	private class TransactionsSinceDateQuery extends BaseQuery {
+		public TransactionsSinceDateQuery(DataSource ds) {
+			super(ds, "select a.trans_id, a.acct_id, a.trans_date, a.trans_type, a.ticker, a.description, " +
+					"a.quantity, a.fees, a.quote, a.trans_amt, a.trans_acct, c.acct_name as xfer_acct FROM inv_trans a " +
+					"inner join acct b on b.acct_id = a.acct_id " +
+					"left outer join acct c on c.acct_id = a.trans_acct " +
+					"where a.trans_date > :transDate " +
+					"order by a.trans_date");
+			declareParameter(new SqlParameter("transDate", Types.TIMESTAMP));
 			compile();
 		}
 	}

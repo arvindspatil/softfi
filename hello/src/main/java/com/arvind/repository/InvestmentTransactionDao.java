@@ -1,5 +1,6 @@
 package com.arvind.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.arvind.model.InvestmentTransaction;
@@ -10,4 +11,5 @@ public interface InvestmentTransactionDao {
 	public List<InvestmentTransaction> findTransactions();
 	public List<InvestmentTransaction> findTransactionsByAcctId(int acctId);
 	public List<InvestmentTransaction> findTransactionsByAcctName(String acctName);
+	public List<InvestmentTransaction> findTransactionsSinceDate(LocalDate startDt);
 }

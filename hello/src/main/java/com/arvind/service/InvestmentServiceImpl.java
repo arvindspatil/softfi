@@ -101,6 +101,17 @@ public class InvestmentServiceImpl implements InvestmentService {
 
 	private static final Logger log = LoggerFactory.getLogger(InvestmentServiceImpl.class);
 
+	public Set<String> getTickersUsedSince(LocalDate startDt) {
+		Set<String> tickers = new HashSet<>();
+		List<InvestmentTransaction> transactions = investmentTransactionDao.findTransactionsSinceDate(startDt);
+		for (InvestmentTransaction trans : transactions) {
+			if (StringUtils.isNotBlank(trans.getTicker())) {
+				tickers.add(trans.getTicker());
+			}
+		}
+		return tickers;
+	}
+	
 	@Override
 	public Map<String, Object> updatePositions() {
 		List<Integer> acctTypes = new ArrayList<>();
@@ -151,7 +162,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 	}
 
 	@Override
-	@Scheduled(cron = "0 18 21 * * *")
+	@Scheduled(cron = "0 9 0 * * *")
 	public Map<String, Object> updateQuotes() {
 		
 		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
@@ -171,13 +182,14 @@ public class InvestmentServiceImpl implements InvestmentService {
 		}
 		
 		List<AccountPosition> positions = acctPositionDao.findPositions();
-		Set<String> tickers = new HashSet<>();
+		LocalDate startDate = LocalDate.now().withDayOfMonth(1).minusMonths(13);
+		Set<String> tickers = getTickersUsedSince(startDate);
 		for (AccountPosition pstn : positions) {
 			if (pstn.getQuantity().compareTo(BigDecimal.ZERO) != 0) {
 				tickers.add(pstn.getTicker());
 			}
 		}
-		
+
 		List<Security> securities = securityDao.findSecurities();
 		HashMap<String, Security> secMap = new HashMap<>();
 		for (Security sec : securities) {
@@ -189,39 +201,41 @@ public class InvestmentServiceImpl implements InvestmentService {
 
 		List<Quote> quotes = new ArrayList<>();
 		for (String ticker : tickers) {			
+			List<Quote> tickerQuotes = new ArrayList<>();
 			if (secMap.containsKey(ticker)) {
 				ObjectMapper mapper = new ObjectMapper();
 				SimpleModule module = new SimpleModule();
-				module.addDeserializer(Quote.class, new ItemDeserializer());
-//				module.addDeserializer(List.class, new QuoteListDeserializer());
+//				module.addDeserializer(Quote.class, new ItemDeserializer());
+				module.addDeserializer(List.class, new QuoteListDeserializer());
 				mapper.registerModule(module);
 				try {
+					
 					TimeUnit.SECONDS.sleep(30);
-					String urlStr = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=";
+/*					String urlStr = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=";
 					urlStr += ticker;
 					urlStr += "&apikey=LVOYR1B8IC22JABA";
 					log.info(urlStr);
 					Quote testQ = mapper.readValue(new URL(urlStr), Quote.class); 
 					log.info(testQ.toString());
 					quotes.add(testQ);
-
-//					String urlStr = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=";
-//					urlStr += ticker;
-//					urlStr += "&apikey=LVOYR1B8IC22JABA";
-//					log.info(urlStr);
-//					List<Quote> testQ = mapper.readValue(new URL(urlStr), List.class); 
-//					log.info(testQ.get(0).toString());
-////					quotes.add(testQ);
-
+*/
+					String urlStr = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=";
+					urlStr += ticker;
+					urlStr += "&outputsize=full";
+					urlStr += "&apikey=LVOYR1B8IC22JABA";
+					log.info(urlStr);
+					List<Quote> testQ = mapper.readValue(new URL(urlStr), List.class); 
+					log.info("Ticker " + ticker + " has " + testQ.size() + " quotes");
+					tickerQuotes.addAll(testQ);
 				} catch (IOException | InterruptedException e) {
 					log.info("Got Exception");
 					e.printStackTrace();
 				}
-//				
-//				break;
 			}
+			tickerQuotes = Util.filterByDates(tickerQuotes, startDate);
+			quotes.addAll(tickerQuotes);
 		}
-		
+
 		List<Quote> addQuotes = new ArrayList<>();
 		List<Quote> updQuotes = new ArrayList<>();
 		for (Quote currentQuote : quotes) {
@@ -330,7 +344,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 				if (tickerQuotes.containsKey(currentQuote.getQuoteDate())) {
 					Quote dbQuote = tickerQuotes.get(currentQuote.getQuoteDate());
 					if (dbQuote.getPricePs().compareTo(currentQuote.getPricePs()) == 0) {
-						log.info("Skipping update for " + dbQuote.getTicker() + " for date " + dbQuote.getQuoteDate());
+//						log.info("Skipping update for " + dbQuote.getTicker() + " for date " + dbQuote.getQuoteDate());
 						continue;
 					} else if (dbQuote.getPricePs().compareTo(currentQuote.getPricePs()) != 0) {
 						updQuotes.add(currentQuote);

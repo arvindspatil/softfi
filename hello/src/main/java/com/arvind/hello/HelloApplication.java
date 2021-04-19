@@ -12,7 +12,7 @@ import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 @ComponentScan({"com.arvind"})
-//@EnableScheduling
+@EnableScheduling
 public class HelloApplication {
 
 	private static final Logger log = LoggerFactory.getLogger(HelloApplication.class);

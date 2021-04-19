@@ -32,6 +32,7 @@ public class QuoteDaoImpl extends JdbcDaoSupport implements QuoteDao {
 	private QuotesByTickerQuery quotesByTickerQuery;
 	private LatestQuotesQuery latestQuotesQuery;
 	private QuotesByTickerDateQuery quotesByTickerDateQuery;
+	private QuotesNearestByTickerDateQuery quotesNearestByTickerDateQuery;
 	private RecentQuotesQuery recentQuotesQuery;
 	private Insert insertQry;
 	private Delete deleteQry;
@@ -44,6 +45,7 @@ public class QuoteDaoImpl extends JdbcDaoSupport implements QuoteDao {
         quotesByTickerQuery = new QuotesByTickerQuery(dataSource);
         latestQuotesQuery = new LatestQuotesQuery(dataSource);
         quotesByTickerDateQuery = new QuotesByTickerDateQuery(dataSource);
+        quotesNearestByTickerDateQuery = new QuotesNearestByTickerDateQuery(dataSource);
         recentQuotesQuery = new RecentQuotesQuery(dataSource);
         insertQry = new Insert(dataSource);
         deleteQry = new Delete(dataSource);
@@ -135,7 +137,20 @@ public class QuoteDaoImpl extends JdbcDaoSupport implements QuoteDao {
 			compile();
 		}
 	}
-
+	
+	private class QuotesNearestByTickerDateQuery extends BaseQuery {
+		public QuotesNearestByTickerDateQuery(DataSource ds) {
+			super(ds, "select ticker, quote_date, price_ps " +
+					"FROM sec_quote " + 
+					"where ticker in (:ticker) " +
+					"and quote_date <= :quoteDate " +
+					"order by ticker, quote_date desc");
+			declareParameter(new SqlParameter("ticker", Types.VARCHAR));
+			declareParameter(new SqlParameter("quoteDate", Types.TIMESTAMP));
+			compile();
+		}
+	}
+	
 	private class QuotesQuery extends BaseQuery {
 		public QuotesQuery(DataSource ds) {
 			super(ds, "select ticker, quote_date, price_ps " +
@@ -205,6 +220,14 @@ public class QuoteDaoImpl extends JdbcDaoSupport implements QuoteDao {
 		params.put("ticker", ticker);
 		params.put("quoteDate", Util.toTimestamp(quoteDate));
 		return quotesByTickerDateQuery.executeByNamedParam(params);
+	}
+
+	@Override
+	public List<Quote> findNearestQuoteByTickerDate(String ticker, LocalDate quoteDate) {
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("ticker", ticker);
+		params.put("quoteDate", Util.toTimestamp(quoteDate));
+		return quotesNearestByTickerDateQuery.executeByNamedParam(params);
 	}
 
 }

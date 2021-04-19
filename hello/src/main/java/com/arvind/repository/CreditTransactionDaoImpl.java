@@ -94,9 +94,9 @@ public class CreditTransactionDaoImpl extends JdbcDaoSupport implements CreditTr
 			bal.setBalanceAmt(BigDecimal.ZERO);
 		} else {
 			balanceMap = Util.updateCreditBalanceByMonth(transactions);
-			for (Map.Entry<LocalDate, BigDecimal> entry : balanceMap.entrySet()) {
-				System.out.println(entry.getKey() + "/" + entry.getValue());
-			}
+//			for (Map.Entry<LocalDate, BigDecimal> entry : balanceMap.entrySet()) {
+//				System.out.println(entry.getKey() + "/" + entry.getValue());
+//			}
 			bal.setBalanceAmt(transactions.get(0).getBalanceAmt());
 		}
 		bal.setAccountValue(bal.getBalanceAmt());

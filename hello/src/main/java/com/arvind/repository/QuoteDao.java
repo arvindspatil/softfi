@@ -14,4 +14,5 @@ public interface QuoteDao {
 	public void update(Quote quote);
 	public List<Quote> findLatestQuotes();
 	public List<Quote> findQuoteByTickerDate(String ticker, LocalDate quoteDate);
+	public List<Quote> findNearestQuoteByTickerDate(String ticker, LocalDate quoteDate);
 }

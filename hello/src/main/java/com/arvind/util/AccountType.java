@@ -7,8 +7,8 @@ public enum AccountType {
     INVESTMENT(4, "Investment"),
     OTHER(5, "Other"),
     AUTOLOAN(6, "Auto Loan"),
-    MORTGAGE(7, "Mortgage");
-
+    MORTGAGE(7, "Mortgage"),
+	NET(8, "Net");
     private final int code;
     
     private final String desc;
