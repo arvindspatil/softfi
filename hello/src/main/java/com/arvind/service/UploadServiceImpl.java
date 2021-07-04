@@ -1788,13 +1788,9 @@ public class UploadServiceImpl implements UploadService {
 		return modelMap;
 	}
 
-	
-	@Override
-	public Map<String, Object> uploadTransactions(MultipartFile file, String acctName) {
+	private Map<String, Object> uploadTransactions(MultipartFile file, Account acct) {
 		Map<String, Object> modelMap = new HashMap<>();
-		
-		List<Account> accounts = accountDao.findAccountsByName(acctName);
-		Account acct = accounts.get(0);
+		String acctName = acct.getAcctName();
 		
 		switch (acct.getAcctType()) {
 
@@ -1803,7 +1799,6 @@ public class UploadServiceImpl implements UploadService {
 			modelMap.put("acctName", acctName);
 			modelMap.put("view", "cash-card-uploaded-inv-trans-list");
 			break;
-
 		default:
 			break;
 		}
@@ -1862,8 +1857,25 @@ public class UploadServiceImpl implements UploadService {
 			modelMap.put("view", "cash-card-uploaded-trans-list");
 		}
 		return modelMap;
-
 	}
+	
+	@Override
+	public Map<String, Object> uploadTransactions(MultipartFile file, String acctName) {
+		Map<String, Object> modelMap = new HashMap<>();
+		
+		List<Account> accounts = accountDao.findAccountsByName(acctName);
+		Account acct = accounts.get(0);
+		return uploadTransactions(file, acct);
+	}	
+
+	@Override
+	public Map<String, Object> uploadTransactions(MultipartFile file, int acctId) {
+		Map<String, Object> modelMap = new HashMap<>();
+		
+		List<Account> accounts = accountDao.findAccountsById(acctId);
+		Account acct = accounts.get(0);
+		return uploadTransactions(file, acct);
+	}	
 
 	@Override
 	public Map<String, Object> fetchUploadedTransactions(String acctName) {
@@ -2442,7 +2454,12 @@ public class UploadServiceImpl implements UploadService {
 		}
 		
 		String acctName = trans.getTransferAcct();
-		List<Account> accounts = accountDao.findAccountsByName(acctName);
+		List<Account> accounts = new ArrayList();
+		if (StringUtils.isBlank(acctName)) {
+			accounts = accountDao.findAccountsById(trans.getTransferAcctId());
+		} else {
+			accounts = accountDao.findAccountsByName(acctName);
+		}
 		Account transferAcct = accounts.get(0);
 		if (transferAcct.getAcctId() == trans.getAcctId()) {
 			return;
@@ -3092,6 +3109,9 @@ public class UploadServiceImpl implements UploadService {
 		TreeMap<LocalDate, BigDecimal> invBalHist = new TreeMap<>();
 		LocalDate aprilDt = LocalDate.now().withDayOfMonth(1).plusMonths(1);
 		for (Account acct : filteredAccounts) {
+//			if (!StringUtils.equals(acct.getAcctName(), "Amazon Card")) {
+//				continue;
+//			}
 			AccountBal bal = new AccountBal();
 			bal.setAcctId(acct.getAcctId());
 			bal.setAcctName(acct.getAcctName());
@@ -3105,8 +3125,8 @@ public class UploadServiceImpl implements UploadService {
 				List<InvestmentTransaction> invTransactions = investmentTransactionDao.findTransactionsByAcctId(acct.getAcctId());
 				TreeMap<LocalDate, BigDecimal> invDateBal = Util.updateInvBalanceByMonth(invTransactions, shareBalanceMap);
 				BigDecimal ignoreDecimal = new BigDecimal(0.5);
+				TreeMap<LocalDate, BigDecimal> dateAcctBal = new TreeMap<>();
 				for (LocalDate currentDt : invDateBal.keySet()) {
-					TreeMap<LocalDate, BigDecimal> dateAcctBal = new TreeMap<>();
 					BigDecimal cashBal = invDateBal.get(currentDt);
 					BigDecimal dateVal = cashBal;
 					if (!shareBalanceMap.containsKey(currentDt)) continue;
@@ -3124,11 +3144,15 @@ public class UploadServiceImpl implements UploadService {
 						dateVal = dateVal.add(positionVal);
 					}
 					dateAcctBal.put(currentDt, dateVal);
-					Util.updateBalanceHistory(invBalHist, dateAcctBal);
+//					System.out.println("Date 1 :" + currentDt + ": Account :" + acct.getAcctName() + ": Balance :" + dateVal + ":");
 				}
+				Util.updateBalanceHistory(invBalHist, dateAcctBal);
 			} else if (acct.getAcctType() == AccountType.CHECKING) {
 				Util.updateBalanceHistory(checkingBalHist, checkingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 			} else if (acct.getAcctType() == AccountType.CREDIT) {
+				if (StringUtils.equals(acct.getAcctName(), "Amazon Card")) {
+					System.out.println("Printing AcctBalances for :" + acct.getAcctName());
+				}
 				Util.updateBalanceHistory(creditBalHist, creditTransactionDao.getAccountBalance(bal, acct.getAcctId()));
 			} else if (acct.getAcctType() == AccountType.SAVINGS) {
 				Util.updateBalanceHistory(savingsBalHist, savingTransactionDao.getAccountBalance(bal, acct.getAcctId()));
@@ -3139,13 +3163,20 @@ public class UploadServiceImpl implements UploadService {
 		}
 		TreeMap<LocalDate, BigDecimal> netBalHist = Util.updateNetBalanceHistory(checkingBalHist, savingsBalHist, creditBalHist, loanBalHist, invBalHist);
 
+		Util.normalizeBalanceHistory(AccountType.CHECKING, checkingBalHist);
+		Util.normalizeBalanceHistory(AccountType.CREDIT, creditBalHist);
+		Util.normalizeBalanceHistory(AccountType.SAVINGS, savingsBalHist);
+		Util.normalizeBalanceHistory(AccountType.MORTGAGE, loanBalHist);
+		Util.normalizeBalanceHistory(AccountType.INVESTMENT, invBalHist);
+		Util.normalizeBalanceHistory(AccountType.NET, netBalHist);
+
 		netBalance.put(AccountType.CHECKING, checkingBalHist);
 		netBalance.put(AccountType.CREDIT, creditBalHist);
 		netBalance.put(AccountType.SAVINGS, savingsBalHist);
 		netBalance.put(AccountType.MORTGAGE, loanBalHist);
 		netBalance.put(AccountType.INVESTMENT, invBalHist);
 		netBalance.put(AccountType.NET, netBalHist);
-		Util.updateMissingBalanceHistory(invBalHist);
+
 		return netBalance;
 	}
 

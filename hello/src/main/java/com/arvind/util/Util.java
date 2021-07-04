@@ -1,6 +1,7 @@
 package com.arvind.util;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.Month;
@@ -122,6 +123,7 @@ public class Util {
 	}
 	
 	public static void updateBalanceHistory(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
+		updateMissingBalanceHistory(acctHist);
 		for (Map.Entry<LocalDate, BigDecimal> entry : acctHist.entrySet()) {
 			if (netHist.containsKey(entry.getKey())) {
 				netHist.put(entry.getKey(), netHist.get(entry.getKey()).add(entry.getValue()));
@@ -131,7 +133,18 @@ public class Util {
 //			System.out.println(entry.getKey() + "/" + entry.getValue());
 		}
 	}
-
+	
+//	public static void updateCreditBalanceHistory(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
+//		updateMissingBalanceHistory(acctHist);
+//		for (Map.Entry<LocalDate, BigDecimal> entry : acctHist.entrySet()) {
+//			if (netHist.containsKey(entry.getKey())) {
+//				netHist.put(entry.getKey(), netHist.get(entry.getKey()).add(entry.getValue()));
+//			} else {
+//				netHist.put(entry.getKey(), entry.getValue());
+//			}
+//		}
+//	}
+//
 	public static TreeMap<LocalDate, BigDecimal> updateNetBalanceHistory(
 			TreeMap<LocalDate, BigDecimal> checkingBalHist,
 			TreeMap<LocalDate, BigDecimal> savingsBalHist, 
@@ -151,7 +164,25 @@ public class Util {
 		return netBalHist;
 	}
 	
+	public static void normalizeBalanceHistory(AccountType acctType, TreeMap<LocalDate, BigDecimal> netHist)
+	{
+		if (netHist.isEmpty()) return;
+		updateMissingBalanceHistory(netHist);
+		for (LocalDate idxDt : netHist.keySet()) {
+			BigDecimal balAmt = netHist.get(idxDt);
+			if (acctType == AccountType.AUTOLOAN ||
+				acctType == AccountType.CREDIT ||
+				acctType == AccountType.MORTGAGE) {
+				balAmt = balAmt.multiply(new BigDecimal(-1));
+			}
+			netHist.put(idxDt, balAmt.setScale(2, RoundingMode.HALF_UP));
+		}
+	}
+	
 	public static void updateMissingBalanceHistory(TreeMap<LocalDate, BigDecimal> netHist) {
+		if (netHist.isEmpty()) {
+			return;
+		}
 		LocalDate currentDt = LocalDate.now().withDayOfMonth(1).plusMonths(1);
 		LocalDate idxDt = netHist.firstKey();
 		while (idxDt.compareTo(currentDt) <= 0) {
@@ -160,32 +191,9 @@ public class Util {
 				netHist.put(idxDt, netHist.get(prevDt));
 			}
 			idxDt = idxDt.plusMonths(1);
-		}
-		for (Map.Entry<LocalDate, BigDecimal> entry : netHist.entrySet()) {
-//			if (netHist.containsKey(entry.getKey())) {
-//				netHist.put(entry.getKey(), netHist.get(entry.getKey()).add(entry.getValue()));
-//			} else {
-//				netHist.put(entry.getKey(), entry.getValue());
-//			}
-//			System.out.println(entry.getKey() + "/" + entry.getValue());
+//			System.out.println("Dt/Balance " + idxDt + " " + netHist.get(idxDt));
 		}
 	}
-
-//	public static void updateInvBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
-//		updateCreditBalHist(netHist, acctHist);
-//	}
-//
-//	public static void updateCheckingBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
-//		updateCreditBalHist(netHist, acctHist);
-//	}
-//
-//	public static void updateSavingBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
-//		updateCreditBalHist(netHist, acctHist);
-//	}
-//
-//	public static void updateLoanBalHist(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
-//		updateCreditBalHist(netHist, acctHist);
-//	}
 
 	public static LocalDate toLocalDate(Timestamp ts) {
 		if (ts == null) {

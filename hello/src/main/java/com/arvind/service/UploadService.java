@@ -16,6 +16,7 @@ import com.arvind.util.AccountType;
 
 public interface UploadService {
 	public Map<String, Object> uploadTransactions(MultipartFile file, String acctName);
+	public Map<String, Object> uploadTransactions(MultipartFile file, int acctId);
 	public Map<String, Object> uploadTransactionsQuicken(MultipartFile file, String acctName);
 	public Map<String, Object> fetchUploadedTransactions(String acctName);
 	public Map<String, Object> displayUploadedTransactions(Integer acctId);

@@ -1,11 +1,18 @@
 package com.arvind.service;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -162,7 +169,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 	}
 
 	@Override
-	@Scheduled(cron = "0 9 0 * * *")
+	@Scheduled(cron = "0 13 20 * * *")
 	public Map<String, Object> updateQuotes() {
 		
 		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
@@ -171,14 +178,14 @@ public class InvestmentServiceImpl implements InvestmentService {
 		
 		updatePositions();
 		
-		HashMap<String, HashMap<LocalDate, Quote>> currentQuotes = new HashMap<>();
+		HashMap<String, HashMap<LocalDateTime, Quote>> currentQuotes = new HashMap<>();
 		List<Quote> dbQuotes = quoteDao.findQuotes();
 		for (Quote dbQuote : dbQuotes) {
 			String ticker = dbQuote.getTicker();
 			if (!currentQuotes.containsKey(ticker)) {
 				currentQuotes.put(ticker, new HashMap<>());
 			}
-			currentQuotes.get(ticker).put(dbQuote.getQuoteDate(), dbQuote);
+			currentQuotes.get(ticker).put(dbQuote.getQuoteDate().atStartOfDay(), dbQuote);
 		}
 		
 		List<AccountPosition> positions = acctPositionDao.findPositions();
@@ -202,6 +209,9 @@ public class InvestmentServiceImpl implements InvestmentService {
 		List<Quote> quotes = new ArrayList<>();
 		for (String ticker : tickers) {			
 			List<Quote> tickerQuotes = new ArrayList<>();
+//			if (!StringUtils.equals(ticker, "VHYAX")) {
+//				continue;
+//			}
 			if (secMap.containsKey(ticker)) {
 				ObjectMapper mapper = new ObjectMapper();
 				SimpleModule module = new SimpleModule();
@@ -227,6 +237,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 					List<Quote> testQ = mapper.readValue(new URL(urlStr), List.class); 
 					log.info("Ticker " + ticker + " has " + testQ.size() + " quotes");
 					tickerQuotes.addAll(testQ);
+//						} catch (IOException  e) {
 				} catch (IOException | InterruptedException e) {
 					log.info("Got Exception");
 					e.printStackTrace();
@@ -240,9 +251,9 @@ public class InvestmentServiceImpl implements InvestmentService {
 		List<Quote> updQuotes = new ArrayList<>();
 		for (Quote currentQuote : quotes) {
 			if (currentQuotes.containsKey(currentQuote.getTicker())) {
-				HashMap<LocalDate, Quote> tickerQuotes = currentQuotes.get(currentQuote.getTicker());
-				if (tickerQuotes.containsKey(currentQuote.getQuoteDate())) {
-					Quote dbQuote = tickerQuotes.get(currentQuote.getQuoteDate());
+				HashMap<LocalDateTime, Quote> tickerQuotes = currentQuotes.get(currentQuote.getTicker());
+				if (tickerQuotes.containsKey(currentQuote.getQuoteDate().atStartOfDay())) {
+					Quote dbQuote = tickerQuotes.get(currentQuote.getQuoteDate().atStartOfDay());
 					if (dbQuote.getPricePs().compareTo(currentQuote.getPricePs()) == 0) {
 						continue;
 					} else if (dbQuote.getPricePs().compareTo(currentQuote.getPricePs()) != 0) {
@@ -253,8 +264,53 @@ public class InvestmentServiceImpl implements InvestmentService {
 			}
 			addQuotes.add(currentQuote);
 		}
+
+		List<Quote> newAddQuotes = new ArrayList<>();
+		HashMap<LocalDate, HashMap<String, Quote>> outMap = new HashMap<>();
+		for (Quote addQ : addQuotes) {
+			if (outMap.containsKey(addQ.getQuoteDate())) {
+				HashMap<String, Quote> tickerMap = outMap.get(addQ.getQuoteDate());
+				if (!tickerMap.containsKey(addQ.getTicker())) {
+					newAddQuotes.add(addQ);
+				}
+				tickerMap.put(addQ.getTicker(), addQ);
+			} else {
+				HashMap<String, Quote> tickerMap = new HashMap<>();
+				tickerMap.put(addQ.getTicker(), addQ);
+				outMap.put(addQ.getQuoteDate(), tickerMap);
+				newAddQuotes.add(addQ);
+			}
+		}
 		
-		for (Quote quote : addQuotes) {
+		BufferedWriter bw = null;
+		try {
+			File quotefile = new File("C:/tmp/data.txt");
+			FileWriter fw = new FileWriter(quotefile);
+			bw = new BufferedWriter(fw);
+			Path filePath = Paths.get("C:/tmp", "data.txt");
+
+			for (Quote quote : newAddQuotes) {
+				bw.write("Add: " + quote.toString());
+//				quoteDao.insert(quote);
+			}
+			
+			for (Quote quote : updQuotes) {
+				bw.write("Upd: " + quote.toString());
+				//				quoteDao.update(quote);
+			}
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		} finally {
+			try {
+				bw.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		for (Quote quote : newAddQuotes) {
+			quote.toString();
 			quoteDao.insert(quote);
 		}
 		
@@ -265,7 +321,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 	}
 
 	@Override
-	@Scheduled(cron = "0 15 14 * * *")
+//	@Scheduled(cron = "0 15 14 * * *")
 	public Map<String, Object> updateQuoteList() {
 		
 		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");

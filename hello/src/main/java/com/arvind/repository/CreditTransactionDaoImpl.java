@@ -112,6 +112,9 @@ public class CreditTransactionDaoImpl extends JdbcDaoSupport implements CreditTr
 		protected CreditTransaction mapRow(ResultSet rs, int rowNum) throws SQLException {
 			CreditTransaction trans = new CreditTransaction();
 			trans.setTransactionId(rs.getInt("trans_id"));
+			if (trans.getTransactionId() == 8473) {
+				System.out.println("Transaction ID is 8473");
+			}
 			trans.setAcctId(rs.getInt("acct_id"));
 			trans.setDescription(StringUtils.trimToEmpty(rs.getString("description")));
 			trans.setTransAmt(rs.getBigDecimal("trans_amt"));
