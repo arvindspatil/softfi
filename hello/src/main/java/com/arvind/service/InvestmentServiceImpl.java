@@ -169,7 +169,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 	}
 
 	@Override
-	@Scheduled(cron = "0 13 20 * * *")
+	@Scheduled(cron = "0 30 16 * * *")
 	public Map<String, Object> updateQuotes() {
 		
 		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
@@ -180,6 +180,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 		
 		HashMap<String, HashMap<LocalDateTime, Quote>> currentQuotes = new HashMap<>();
 		List<Quote> dbQuotes = quoteDao.findQuotes();
+		
 		for (Quote dbQuote : dbQuotes) {
 			String ticker = dbQuote.getTicker();
 			if (!currentQuotes.containsKey(ticker)) {
@@ -206,6 +207,9 @@ public class InvestmentServiceImpl implements InvestmentService {
 			}
 		}
 
+//		tickers.clear();
+//		tickers.add("MTD");
+//		
 		List<Quote> quotes = new ArrayList<>();
 		for (String ticker : tickers) {			
 			List<Quote> tickerQuotes = new ArrayList<>();

@@ -2,9 +2,8 @@ package com.arvind.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.Period;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.arvind.model.Account;
+import com.arvind.model.AccountBal;
 import com.arvind.model.AccountRecon;
+import com.arvind.model.BillSchedule;
+import com.arvind.model.Bills;
 import com.arvind.model.CheckingTransaction;
 import com.arvind.model.CreditTransaction;
 import com.arvind.model.InvestmentTransaction;
@@ -43,6 +44,8 @@ import com.arvind.model.json.AllData;
 import com.arvind.model.json.ChartData;
 import com.arvind.model.json.ChartDataset;
 import com.arvind.repository.AccountDao;
+import com.arvind.repository.BillScheduleDao;
+import com.arvind.repository.BillsDao;
 import com.arvind.repository.CheckingTransactionDao;
 import com.arvind.repository.CreditTransactionDao;
 import com.arvind.repository.InvestmentTransactionDao;
@@ -50,8 +53,11 @@ import com.arvind.repository.LoanTransactionDao;
 import com.arvind.repository.SavingTransactionDao;
 import com.arvind.repository.SecurityDao;
 import com.arvind.service.AccountService;
+import com.arvind.service.InvestmentService;
 import com.arvind.service.UploadService;
 import com.arvind.util.AccountType;
+import com.arvind.util.BillStatus;
+import com.arvind.util.FrequencyType;
 import com.arvind.util.Util;
 
 @CrossOrigin(origins = "http://localhost:3000")
@@ -69,6 +75,9 @@ public class RestAccountController {
 	UploadService uploadService;
 
 	@Autowired
+	InvestmentService investmentService;
+
+	@Autowired
 	CreditTransactionDao creditTransactionDao;
 
 	@Autowired
@@ -84,6 +93,12 @@ public class RestAccountController {
 	LoanTransactionDao loanTransactionDao;
 
 	@Autowired
+	BillScheduleDao billScheduleDao;
+
+	@Autowired
+	BillsDao billsDao;
+
+	@Autowired
 	AccountService accountService;
 
 	@GetMapping("/allaccounts")
@@ -93,7 +108,7 @@ public class RestAccountController {
 		Predicate<Account> isValidAccount = acct -> (acct.getAcctType() == AccountType.AUTOLOAN
 				|| acct.getAcctType() == AccountType.CHECKING || acct.getAcctType() == AccountType.CREDIT
 				|| acct.getAcctType() == AccountType.MORTGAGE || acct.getAcctType() == AccountType.SAVINGS
-				|| acct.getAcctType() == AccountType.INVESTMENT);
+				|| acct.getAcctType() == AccountType.INVESTMENT || acct.getAcctType() == AccountType.OTHER);
 		return allAccounts.stream().filter(isValidAccount).collect(Collectors.toList());
 	}
 
@@ -526,6 +541,183 @@ public class RestAccountController {
 	@PostMapping("/add-security")
 	public void addSecurity(@RequestBody Security security) {
 		securityDao.insertSecurity(security);
+	}
+
+	@RequestMapping(value = "/fetch-acct-positions/{id}", method = RequestMethod.GET)
+	public AccountBal getPositions(@PathVariable("id") int id) {
+		List<Account> accounts = accountDao.findAccountsById(id);
+		String acctName = accounts.get(0).getAcctName();
+		AccountBal bal = investmentService.getPositions(acctName);
+		return bal;
+	}
+
+	@GetMapping("/fetch-billschedules")
+	public List<BillSchedule> getAllBillSchedules() {
+		List<BillSchedule> allBillSchedules = billScheduleDao.findBillSchedules();
+		LocalDate endDate = LocalDate.of(2050, 12, 31);
+		LocalDate todayDate = LocalDate.now();
+		for (BillSchedule sched : allBillSchedules) {
+			LocalDate stmtDate = sched.getStartDate();
+
+			FrequencyType frequencyType = sched.getFrequencyType();
+			int stmtFrequency = 1;
+			switch (frequencyType) {
+			case MONTHLY:
+				stmtFrequency = 1;
+				break;
+
+			case BIMONTHLY:
+				stmtFrequency = 2;
+				break;
+
+			case QUARTERLY:
+				stmtFrequency = 3;
+				break;
+
+			case SIXMONTHLY:
+				stmtFrequency = 6;
+				break;
+
+			case YEARLY:
+				stmtFrequency = 12;
+			}
+			
+			while (true) {
+				if (stmtDate.isBefore(todayDate)) {
+					stmtDate = stmtDate.plusMonths(stmtFrequency);
+					continue;
+				}
+				if (stmtDate.isAfter(endDate)) {
+					break;
+				}
+				LocalDate dueDate = stmtDate.plusDays(sched.getGracePeriod());
+				System.out.println(sched.getPayee());
+				System.out.println(stmtDate);
+				System.out.println(dueDate);
+				stmtDate = stmtDate.plusMonths(stmtFrequency);
+			}			
+		}
+		return allBillSchedules;
+	}
+
+	@PostMapping("/add-billschedule")
+	public void addBillSchedule(@RequestBody BillSchedule billSchedule) {
+		billScheduleDao.insertBillSchedule(billSchedule);
+		LocalDate endDate = LocalDate.of(2050, 12, 31);
+		LocalDate todayDate = LocalDate.now();
+		List<Bills> bills = new ArrayList<>();
+		
+		LocalDate stmtDate = billSchedule.getStartDate();
+
+		FrequencyType frequencyType = billSchedule.getFrequencyType();
+		int stmtFrequency = 1;
+		switch (frequencyType) {
+		case MONTHLY:
+			stmtFrequency = 1;
+			break;
+
+		case BIMONTHLY:
+			stmtFrequency = 2;
+			break;
+
+		case QUARTERLY:
+			stmtFrequency = 3;
+			break;
+
+		case SIXMONTHLY:
+			stmtFrequency = 6;
+			break;
+
+		case YEARLY:
+			stmtFrequency = 12;
+		}
+
+		while (true) {
+			if (stmtDate.isBefore(todayDate)) {
+				stmtDate = stmtDate.plusMonths(stmtFrequency);
+				continue;
+			}
+			if (stmtDate.isAfter(endDate)) {
+				break;
+			}
+			LocalDate dueDate = stmtDate.plusDays(billSchedule.getGracePeriod());
+			Bills bill = new Bills();
+			bill.setScheduleId(billSchedule.getScheduleId());
+			bill.setPayee(billSchedule.getPayee());
+			bill.setStmtDate(stmtDate);
+			bill.setDueDate(dueDate);
+			bill.setStatus(BillStatus.UNPAID);
+			bill.setAmount(BigDecimal.ZERO);
+			billsDao.insertBill(bill);
+			stmtDate = stmtDate.plusMonths(stmtFrequency);
+		}			
+	}
+
+	@DeleteMapping("/delete-billschedule/{id}")
+	public void deleteBillSchedule(@PathVariable int id) {
+		billsDao.delete(id);
+		billScheduleDao.delete(id);
+	}
+
+	@GetMapping("/fetch-allbills")
+	public List<Bills> getAllBills() {
+		List<Bills> allBills = billsDao.getAllBills();
+		return allBills;
+	}
+
+	@GetMapping("/sync-billschedule")
+	public List<Bills> syncBillSchedule() {
+		List<BillSchedule> allBillSchedules = billScheduleDao.findBillSchedules();
+		LocalDate endDate = LocalDate.of(2023, 12, 31);
+		LocalDate todayDate = LocalDate.now();
+		List<Bills> bills = new ArrayList<>();
+		
+		for (BillSchedule sched : allBillSchedules) {
+			LocalDate stmtDate = sched.getStartDate();
+
+			FrequencyType frequencyType = sched.getFrequencyType();
+			int stmtFrequency = 1;
+			switch (frequencyType) {
+			case MONTHLY:
+				stmtFrequency = 1;
+				break;
+
+			case BIMONTHLY:
+				stmtFrequency = 2;
+				break;
+
+			case QUARTERLY:
+				stmtFrequency = 3;
+				break;
+
+			case SIXMONTHLY:
+				stmtFrequency = 6;
+				break;
+
+			case YEARLY:
+				stmtFrequency = 12;
+			}
+			
+			while (true) {
+				if (stmtDate.isBefore(todayDate)) {
+					stmtDate = stmtDate.plusMonths(stmtFrequency);
+					continue;
+				}
+				if (stmtDate.isAfter(endDate)) {
+					break;
+				}
+				LocalDate dueDate = stmtDate.plusDays(sched.getGracePeriod());
+				Bills bill = new Bills();
+				bill.setPayee(sched.getPayee());
+				bill.setStmtDate(stmtDate);
+				bill.setDueDate(dueDate);
+				bill.setStatus(BillStatus.UNPAID);
+				bill.setAmount(BigDecimal.ZERO);
+				bills.add(bill);
+				stmtDate = stmtDate.plusMonths(stmtFrequency);
+			}			
+		}
+		return bills;
 	}
 
 }

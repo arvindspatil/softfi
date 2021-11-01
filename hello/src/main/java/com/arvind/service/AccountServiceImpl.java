@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.collections4.iterators.ReverseListIterator;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -521,6 +522,50 @@ public class AccountServiceImpl implements AccountService {
 		return modelMap;
 	}
 
+	private Map<String, ArrayList<Pair<LocalDate, LocalDate>>> tDates(List<InvestmentTransaction> transactions) {
+		Map<String, ArrayList<Pair<LocalDate, LocalDate>>> modelMap = new HashMap<>();
+		BigDecimal ignoreDecimal = new BigDecimal(0.5);
+		Map<String, LocalDate> startDates = new HashMap<>();
+		ReverseListIterator<InvestmentTransaction> riter = new ReverseListIterator<>(transactions);
+		while (riter.hasNext()) {
+			InvestmentTransaction trans = riter.next();
+			if (StringUtils.isBlank(trans.getTicker())) {
+				continue;
+			}
+			BigDecimal currentQty = trans.getBalanceQty();
+			if (currentQty.compareTo(ignoreDecimal) < 0) {
+				if (!startDates.containsKey(trans.getTicker())) {
+					continue;
+				}
+				LocalDate startDate = startDates.get(trans.getTicker());
+				Pair<LocalDate, LocalDate> timeWindow = Pair.of(startDate, trans.getTransDate());
+				if (!modelMap.containsKey(trans.getTicker())) {
+					modelMap.put(trans.getTicker(), new ArrayList<>());
+				}
+				modelMap.get(trans.getTicker()).add(timeWindow);
+				startDates.remove(trans.getTicker());
+			} else {
+				if (startDates.containsKey(trans.getTicker())) {
+					continue;
+				}
+				startDates.put(trans.getTicker(), trans.getTransDate());
+			}
+		}
+		System.out.println("Old ones:");
+		for (String ticker : modelMap.keySet()) {
+			System.out.println("Ticker: " + ticker);
+			for (Pair<LocalDate, LocalDate> windows : modelMap.get(ticker)) {
+				System.out.println("Start Date :" + windows.getKey() + ": End Date :" + windows.getValue() + ":");
+			}
+		}
+		LocalDate currentDate = LocalDate.now();
+		System.out.println("Current ones:");
+		for (String ticker : startDates.keySet()) {
+			System.out.println("Ticker: " + ticker);
+			System.out.println("Start Date :" + startDates.get(ticker) + ": End Date :" + currentDate + ":");
+		}
+		return modelMap;
+	}
 	
 	@Override
 	public Map<String, Object> fetchTransactions(Integer acctId) {
@@ -554,6 +599,7 @@ public class AccountServiceImpl implements AccountService {
 			TreeMap<LocalDate, TreeMap<String, BigDecimal>> shareBalanceMap = new TreeMap<>();
 			Util.updateInvestmentBalance(invTransactions);
 			modelMap.put("invTransactions", invTransactions);
+			tDates(invTransactions);
 			break;
 
 		case AUTOLOAN:
