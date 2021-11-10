@@ -27,6 +27,7 @@ import com.arvind.model.CheckingTransaction;
 import com.arvind.model.CreditTransaction;
 import com.arvind.model.InvestmentTransaction;
 import com.arvind.model.LoanTransaction;
+import com.arvind.model.OtherTransaction;
 import com.arvind.model.Quote;
 import com.arvind.model.SavingTransaction;
 
@@ -268,10 +269,31 @@ public class Util {
 		Collections.reverse(transactions);
 	}
 
+	public static void updateOtherBalance(List<OtherTransaction> transactions) {
+		BigDecimal balance = new BigDecimal(0);
+		for (OtherTransaction trans : transactions) {
+			balance = balance.add(trans.getTransAmt());
+			trans.setBalanceAmt(balance);
+		}
+		Collections.reverse(transactions);
+	}
+	
 	public static TreeMap<LocalDate, BigDecimal> updateCreditBalanceByMonth(List<CreditTransaction> transactions) {
 		TreeMap<LocalDate, BigDecimal> balanceMap = new TreeMap<>();
 		BigDecimal balance = new BigDecimal(0);
 		for (CreditTransaction trans : transactions) {
+			balance = balance.add(trans.getTransAmt());
+			trans.setBalanceAmt(balance);
+			balanceMap.put(trans.getTransDate().plusMonths(1).withDayOfMonth(1), trans.getBalanceAmt());
+		}
+		Collections.reverse(transactions);
+		return balanceMap;
+	}
+
+	public static TreeMap<LocalDate, BigDecimal> updateOtherBalanceByMonth(List<OtherTransaction> transactions) {
+		TreeMap<LocalDate, BigDecimal> balanceMap = new TreeMap<>();
+		BigDecimal balance = new BigDecimal(0);
+		for (OtherTransaction trans : transactions) {
 			balance = balance.add(trans.getTransAmt());
 			trans.setBalanceAmt(balance);
 			balanceMap.put(trans.getTransDate().plusMonths(1).withDayOfMonth(1), trans.getBalanceAmt());

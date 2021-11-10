@@ -169,7 +169,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 	}
 
 	@Override
-	@Scheduled(cron = "0 30 16 * * *")
+	@Scheduled(cron = "0 50 17 * * *")
 	public Map<String, Object> updateQuotes() {
 		
 		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");

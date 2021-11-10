@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.collections4.iterators.ReverseListIterator;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -24,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 
 import com.arvind.model.Account;
 import com.arvind.model.AccountBal;
@@ -32,6 +30,7 @@ import com.arvind.model.CheckingTransaction;
 import com.arvind.model.CreditTransaction;
 import com.arvind.model.InvestmentTransaction;
 import com.arvind.model.LoanTransaction;
+import com.arvind.model.OtherTransaction;
 import com.arvind.model.Quote;
 import com.arvind.model.SavingTransaction;
 import com.arvind.model.Security;
@@ -45,6 +44,7 @@ import com.arvind.repository.CheckingTransactionDao;
 import com.arvind.repository.CreditTransactionDao;
 import com.arvind.repository.InvestmentTransactionDao;
 import com.arvind.repository.LoanTransactionDao;
+import com.arvind.repository.OtherTransactionDao;
 import com.arvind.repository.PayeeMapDao;
 import com.arvind.repository.QuoteDao;
 import com.arvind.repository.SavingTransactionDao;
@@ -70,6 +70,9 @@ public class AccountServiceImpl implements AccountService {
 
 	@Autowired
 	CreditTransactionDao creditTransactionDao;
+
+	@Autowired
+	OtherTransactionDao otherTransactionDao;
 
 	@Autowired
 	CheckingTransactionDao checkingTransactionDao;
@@ -604,12 +607,15 @@ public class AccountServiceImpl implements AccountService {
 
 		case AUTOLOAN:
 		case MORTGAGE:
-//			List<LoanTransaction> loanUpTransactions = uploadLoanTransDao.findTransactionsByAcctId(acctId);
 			List<LoanTransaction> loanTransactions = loanTransactionDao.findTransactionsByAcctId(acctId);
 			Util.updateLoanBalance(loanTransactions);
-//			modelMap.put("transactions", loanUpTransactions);
 			modelMap.put("loanTransactions", loanTransactions);
-//			modelMap.put("view", "cash-loan-reconcile-upload");
+			break;
+
+		case OTHER:
+			List<OtherTransaction> otherTransactions = otherTransactionDao.findTransactionsByAcctId(acctId);
+			Util.updateOtherBalance(otherTransactions);
+			modelMap.put("otherTransactions", otherTransactions);
 			break;
 
 		default:

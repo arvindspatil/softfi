@@ -32,6 +32,7 @@ public class BillsDaoImpl extends JdbcDaoSupport implements BillsDao {
 	private GetBillsByStatusQuery getBillsByStatusQuery;
 	private Insert insertQry;
 	private Delete deleteQry;
+	private Update updateQry;
 
 	@PostConstruct
     private void initialize() {
@@ -40,6 +41,7 @@ public class BillsDaoImpl extends JdbcDaoSupport implements BillsDao {
         getBillsByStatusQuery = new GetBillsByStatusQuery(dataSource);
         insertQry = new Insert(dataSource);
         deleteQry = new Delete(dataSource);
+        updateQry = new Update(dataSource);
     }
 	
 	private class GetAllBillsQuery extends MappingSqlQuery<Bills> {
@@ -141,6 +143,29 @@ public class BillsDaoImpl extends JdbcDaoSupport implements BillsDao {
 	@Override
 	public List<Bills> getAllBills() {
 		return getAllBillsQuery.execute();
+	}
+
+	@Override
+	public void updateBill(Bills bill) {
+		Map<String, Object> params = new HashMap<>();
+		params.put("payDate", bill.getPayDate());
+		params.put("pamount", bill.getAmount());
+		params.put("pStatus", bill.getStatus().getCode());
+		params.put("billId", bill.getBillId());
+		updateQry.updateByNamedParam(params);
+	}
+
+	private class Update extends SqlUpdate {
+		private static final String SQL = "update bills set pay_date = :payDate, amount = :pamount, status = :pStatus "
+				+ "where bill_id = :billId";
+
+		Update(final DataSource dataSource) {
+			super(dataSource, SQL);
+			declareParameter(new SqlParameter("payDate", Types.TIMESTAMP));
+			declareParameter(new SqlParameter("pamount", Types.DECIMAL));
+			declareParameter(new SqlParameter("pStatus", Types.INTEGER));
+			declareParameter(new SqlParameter("billId", Types.INTEGER));
+		}
 	}
 
 }

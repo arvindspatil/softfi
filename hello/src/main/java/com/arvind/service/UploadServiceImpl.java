@@ -57,6 +57,7 @@ import com.arvind.model.CheckingTransaction;
 import com.arvind.model.CreditTransaction;
 import com.arvind.model.InvestmentTransaction;
 import com.arvind.model.LoanTransaction;
+import com.arvind.model.OtherTransaction;
 import com.arvind.model.Quote;
 import com.arvind.model.ReportAccountBal;
 import com.arvind.model.SavingTransaction;
@@ -68,6 +69,7 @@ import com.arvind.repository.CheckingTransactionDao;
 import com.arvind.repository.CreditTransactionDao;
 import com.arvind.repository.InvestmentTransactionDao;
 import com.arvind.repository.LoanTransactionDao;
+import com.arvind.repository.OtherTransactionDao;
 import com.arvind.repository.PayeeMapDao;
 import com.arvind.repository.QuoteDao;
 import com.arvind.repository.SavingTransactionDao;
@@ -106,6 +108,9 @@ public class UploadServiceImpl implements UploadService {
 
 	@Autowired
 	LoanTransactionDao loanTransactionDao;
+
+	@Autowired
+	OtherTransactionDao otherTransactionDao;
 
 	@Autowired
 	UploadCreditTransDao uploadTransDao;
@@ -2528,6 +2533,18 @@ public class UploadServiceImpl implements UploadService {
 			xferTrans.setTransAmt(trans.getTransAmt().multiply(new BigDecimal(-1)));
 			xferTrans.setTransferAcctId(trans.getAcctId());
 			loanTransactionDao.insert(xferTrans);
+		}
+			break;
+
+		case OTHER: {
+			OtherTransaction xferTrans = new OtherTransaction();
+			xferTrans.setAcctId(transferAcct.getAcctId());
+			xferTrans.setTransDate(trans.getTransDate());
+			xferTrans.setDescription(trans.getDescription());
+			xferTrans.setInDescription(trans.getInDescription());
+			xferTrans.setTransAmt(trans.getTransAmt().multiply(new BigDecimal(-1)));
+			xferTrans.setTransferAcctId(trans.getAcctId());
+			otherTransactionDao.insert(xferTrans);
 		}
 			break;
 

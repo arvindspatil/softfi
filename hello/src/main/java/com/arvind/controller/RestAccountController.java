@@ -50,9 +50,11 @@ import com.arvind.repository.CheckingTransactionDao;
 import com.arvind.repository.CreditTransactionDao;
 import com.arvind.repository.InvestmentTransactionDao;
 import com.arvind.repository.LoanTransactionDao;
+import com.arvind.repository.OtherTransactionDao;
 import com.arvind.repository.SavingTransactionDao;
 import com.arvind.repository.SecurityDao;
 import com.arvind.service.AccountService;
+import com.arvind.service.BillService;
 import com.arvind.service.InvestmentService;
 import com.arvind.service.UploadService;
 import com.arvind.util.AccountType;
@@ -93,6 +95,9 @@ public class RestAccountController {
 	LoanTransactionDao loanTransactionDao;
 
 	@Autowired
+	OtherTransactionDao otherTransactionDao;
+
+	@Autowired
 	BillScheduleDao billScheduleDao;
 
 	@Autowired
@@ -100,6 +105,9 @@ public class RestAccountController {
 
 	@Autowired
 	AccountService accountService;
+
+	@Autowired
+	BillService billService;
 
 	@GetMapping("/allaccounts")
 	public List<Account> handleAllAccounts(Model model) {
@@ -140,6 +148,13 @@ public class RestAccountController {
 	@RequestMapping(value = "/transactions/{id}", method = RequestMethod.GET)
 	@ResponseBody
 	public Map<String, Object> getTransactionsByAcctId(@PathVariable("id") int id) {
+		Map<String, Object> transactions = accountService.fetchTransactions(id);
+		return transactions;
+	}
+
+	@RequestMapping(value = "/other-transactions/{id}", method = RequestMethod.GET)
+	@ResponseBody
+	public Map<String, Object> getOtherTransactionsByAcctId(@PathVariable("id") int id) {
 		Map<String, Object> transactions = accountService.fetchTransactions(id);
 		return transactions;
 	}
@@ -198,6 +213,11 @@ public class RestAccountController {
 	@DeleteMapping("/delete-loan-trans/{acctid}/{id}")
 	public void deleteLoanTrans(@PathVariable int id, @PathVariable int acctid) {
 		loanTransactionDao.delete(id);
+	}
+
+	@DeleteMapping("/delete-other-trans/{acctid}/{id}")
+	public void deleteOtherTrans(@PathVariable int id, @PathVariable int acctid) {
+		otherTransactionDao.delete(id);
 	}
 
 	@DeleteMapping("/delete-uploaded-checking-trans/{acctid}/{id}")
@@ -718,6 +738,12 @@ public class RestAccountController {
 			}			
 		}
 		return bills;
+	}
+
+	@PostMapping("/update-bill")
+	public void updateBill(@RequestBody Bills bill) {
+		System.out.println("Here");
+		billService.updateBill(bill);
 	}
 
 }

@@ -9,4 +9,5 @@ public interface BillsDao {
 	public List<Bills> getAllBills();
 	public void insertBill(Bills bill);
 	public void delete(int id);
+	public void updateBill(Bills bill);
 }
