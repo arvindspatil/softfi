@@ -2,7 +2,8 @@ package com.arvind.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -62,6 +64,12 @@ import com.arvind.util.BillStatus;
 import com.arvind.util.FrequencyType;
 import com.arvind.util.Util;
 
+import net.jacobpeterson.alpaca.AlpacaAPI;
+import net.jacobpeterson.alpaca.model.endpoint.marketdata.historical.bar.BarsResponse;
+import net.jacobpeterson.alpaca.model.endpoint.marketdata.historical.bar.enums.BarAdjustment;
+import net.jacobpeterson.alpaca.model.endpoint.marketdata.historical.bar.enums.BarTimePeriod;
+import net.jacobpeterson.alpaca.rest.AlpacaClientException;
+
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/v1/")
@@ -109,6 +117,12 @@ public class RestAccountController {
 	@Autowired
 	BillService billService;
 
+	@Value("${ALPACA_KEY}")
+	private String alpacaKey;
+
+	@Value("${ALPACA_SECRET}")
+	private String alpacaSecret;
+	   
 	@GetMapping("/allaccounts")
 	public List<Account> handleAllAccounts(Model model) {
 		List<Account> allAccounts = accountDao.findAccounts();
@@ -269,10 +283,15 @@ public class RestAccountController {
 
 	@PostMapping("/update-checking-trans")
 	public void updateCheckingTransaction(@RequestBody CheckingTransaction trans) {
-		System.out.println("Here");
 		deleteCheckingTrans(trans.getTransactionId(), trans.getAcctId());
 		addCheckingTrans(trans);
-//		accountService.addCheckingTransaction(trans);
+	}
+
+	@PostMapping("/update-cake-trans")
+	public void updateCakeTransaction(@RequestBody CheckingTransaction trans) {
+		deleteCheckingTrans(trans.getTransactionId(), trans.getAcctId());
+		trans.setTransferAcctId(88);
+		addCheckingTrans(trans);
 	}
 
 	@PostMapping("/update-savings-trans")
@@ -318,8 +337,6 @@ public class RestAccountController {
 	public void updateAccountRecon(@RequestBody AccountRecon account) {
 		System.out.println("AccountRecon print");
 		accountService.updateAccountRecon(account.getAcctId(), account.getReconDate());
-//		deleteCreditTrans(trans.getTransactionId(), trans.getAcctId());
-//		addCreditTrans(trans);
 	}
 	
 	@GetMapping("/list-transactions")
@@ -340,7 +357,6 @@ public class RestAccountController {
 		acctDataset.setData(dataValues);
 		acctDataset.setLabel(acctType.name());
 		acctDataset.setLineTension(0);
-//		acctDataset.setBackgroundColor("transparent");
 		acctDataset.setBackgroundColor(color);
 		acctDataset.setBorderColor(color);
 		acctDataset.setPointBackgroundColor(color);
@@ -355,7 +371,6 @@ public class RestAccountController {
 	public AllData getChartData(Model model) {
 
 		AllData allData = new AllData();
-		Map<AccountType, ChartData> chartData = new HashMap<>();
 
 		List<String> labelList = Util.getChartKeys();
 		Map<AccountType, Object> histMap = uploadService.getHistoricalBalance();
@@ -381,7 +396,7 @@ public class RestAccountController {
 	public ChartData getChartCheckingData() {
 
 		List<String> labelList = new ArrayList<>();
-		List<BigDecimal> dataValues = new ArrayList<>(); // Util.filterByType(acctType, histMap);
+		List<BigDecimal> dataValues = new ArrayList<>();
 		Map<String, BigDecimal> balanceMap = accountService.getAccountBalance(AccountType.CHECKING);
 		for (Map.Entry<String, BigDecimal> entry : balanceMap.entrySet()) {
 			labelList.add(entry.getKey());
@@ -625,7 +640,6 @@ public class RestAccountController {
 		billScheduleDao.insertBillSchedule(billSchedule);
 		LocalDate endDate = LocalDate.of(2050, 12, 31);
 		LocalDate todayDate = LocalDate.now();
-		List<Bills> bills = new ArrayList<>();
 		
 		LocalDate stmtDate = billSchedule.getStartDate();
 
@@ -681,8 +695,34 @@ public class RestAccountController {
 
 	@GetMapping("/fetch-allbills")
 	public List<Bills> getAllBills() {
-		List<Bills> allBills = billsDao.getAllBills();
+		AlpacaAPI alpacaAPI = new AlpacaAPI(alpacaKey, alpacaSecret);
+		try {
+		    // Get AAPL one hour, split-adjusted bars from 7/6/2021 market open
+		    // to 7/8/2021 market close and print them out
+		    BarsResponse aaplBarsResponse = alpacaAPI.marketData().getBars(
+		            "AAPL",
+		            ZonedDateTime.of(2021, 12, 10, 9, 30, 0, 0, ZoneId.of("America/New_York")),
+		            ZonedDateTime.of(2021, 12, 19, 12 + 4, 0, 0, 0, ZoneId.of("America/New_York")),
+//		            ZonedDateTime.of(2021, 12, 23, 9, 30, 0, 0, ZoneId.of("America/New_York")),
+		            null,
+		            null,
+		            1,
+		            BarTimePeriod.DAY,
+		            BarAdjustment.SPLIT);
+		    aaplBarsResponse.getBars().forEach(System.out::println);
+		} catch (AlpacaClientException exception) {
+		    exception.printStackTrace();
+		}
+		
+		List<Bills> allBills = billsDao.getPendingBills(); // getAllBills();
 		return allBills;
+	}
+
+	@GetMapping("/update-quotes")
+	public void updateQuotes() {
+		System.out.println("Updating Quotes");
+		investmentService.updateQuotes();
+		System.out.println("Quote updates are complete");
 	}
 
 	@GetMapping("/sync-billschedule")

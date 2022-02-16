@@ -73,29 +73,33 @@ public class Util {
 			firstOfMonthQuotes.put(firstDateOfMth, dateQuotes.get(firstDt));
 		}
 
-		filteredQuotes.putAll(lastOfMonthQuotes); //.values());
-		filteredQuotes.putAll(firstOfMonthQuotes); // .values());
+		filteredQuotes.putAll(lastOfMonthQuotes);
+		filteredQuotes.putAll(firstOfMonthQuotes);
 		
-//		for (Quote quote : filteredQuotes) {
-//			System.out.println("Date/Ticker/Value: "
-//				+ quote.getQuoteDate() + "/"
-//				+ quote.getTicker() + "/"
-//				+ quote.getPricePs());
-//		}
 		return new ArrayList(filteredQuotes.values());		
 	}
 
 	public static List<BigDecimal> filterByType(AccountType acctType, Map<AccountType, Object> data) {
 		List<BigDecimal> acctBals = new ArrayList<>();
 		TreeMap<LocalDate, BigDecimal> acctData = (TreeMap<LocalDate, BigDecimal>) data.get(acctType);
-		// TreeMap<LocalDate, BigDecimal> acctData = acctData1.
-		int limit = 12;
+		int limit = 19;
 		int idx = 0;
 		for (LocalDate keyDt : acctData.descendingKeySet()) {
-//			System.out.println(keyDt + "/" + acctData.get(keyDt));
 			acctBals.add(acctData.get(keyDt));
 			idx++;
 			if (idx > limit) break;
+		}
+		Collections.reverse(acctBals);
+		return acctBals;
+	}
+
+	public static List<BigDecimal> filterByTypeApril(AccountType acctType, Map<AccountType, Object> data) {
+		List<BigDecimal> acctBals = new ArrayList<>();
+		TreeMap<LocalDate, BigDecimal> acctData = (TreeMap<LocalDate, BigDecimal>) data.get(acctType);
+		LocalDate aprilDt = LocalDate.of(2020, 4, 1);
+		for (LocalDate keyDt : acctData.descendingKeySet()) {
+			if (keyDt.isBefore(aprilDt)) break;
+			acctBals.add(acctData.get(keyDt));
 		}
 		Collections.reverse(acctBals);
 		return acctBals;
@@ -106,14 +110,26 @@ public class Util {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/YY");
 		LocalDate todayDt = LocalDate.now();
 		keys.add(todayDt.format(formatter));		
-		for (int idx = 0; idx < 12; idx++) {
+		for (int idx = 0; idx < 19; idx++) {
 			LocalDate dt = todayDt.withDayOfMonth(1).minusMonths(idx);			
 			keys.add(dt.format(formatter));
 		}
 		Collections.reverse(keys);
 		return keys;
 	}
-	
+
+	public static List<String> getChartKeysfromApril() {
+		List<String> keys = new ArrayList<>();
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/YY");
+		LocalDate startDt = LocalDate.of(2020, 4, 1);
+		LocalDate todayDt = LocalDate.now();
+		while (!startDt.isAfter(todayDt)) {
+			keys.add(startDt.format(formatter));			
+			startDt = startDt.plusMonths(1);
+		}
+		return keys;
+	}
+
 	public static String getFullName(Account acct, Map<Integer, Account> acctIdAccount) {
 		String fullName = StringUtils.EMPTY;
 		if (!StringUtils.equals("Root", acct.getAcctName())) {
@@ -131,21 +147,9 @@ public class Util {
 			} else {
 				netHist.put(entry.getKey(), entry.getValue());
 			}
-//			System.out.println(entry.getKey() + "/" + entry.getValue());
 		}
 	}
 	
-//	public static void updateCreditBalanceHistory(TreeMap<LocalDate, BigDecimal> netHist, TreeMap<LocalDate, BigDecimal> acctHist) {
-//		updateMissingBalanceHistory(acctHist);
-//		for (Map.Entry<LocalDate, BigDecimal> entry : acctHist.entrySet()) {
-//			if (netHist.containsKey(entry.getKey())) {
-//				netHist.put(entry.getKey(), netHist.get(entry.getKey()).add(entry.getValue()));
-//			} else {
-//				netHist.put(entry.getKey(), entry.getValue());
-//			}
-//		}
-//	}
-//
 	public static TreeMap<LocalDate, BigDecimal> updateNetBalanceHistory(
 			TreeMap<LocalDate, BigDecimal> checkingBalHist,
 			TreeMap<LocalDate, BigDecimal> savingsBalHist, 
@@ -192,7 +196,6 @@ public class Util {
 				netHist.put(idxDt, netHist.get(prevDt));
 			}
 			idxDt = idxDt.plusMonths(1);
-//			System.out.println("Dt/Balance " + idxDt + " " + netHist.get(idxDt));
 		}
 	}
 
@@ -206,8 +209,6 @@ public class Util {
 	public static LocalDate startDateReport() {
 		LocalDate todayDt = LocalDate.now();
 		LocalDate startDt = todayDt.withDayOfMonth(1).minusMonths(12);
-//		System.out.println("Start Date = " + startDt);
-//		System.out.println("Start Month = " + todayDt.getMonth());
 		return startDt;
 	}
 	

@@ -7,21 +7,18 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
@@ -29,19 +26,15 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import com.arvind.hello.ItemDeserializer;
 import com.arvind.hello.QuoteListDeserializer;
 import com.arvind.model.Account;
 import com.arvind.model.AccountBal;
 import com.arvind.model.AccountPosition;
-import com.arvind.model.CheckingTransaction;
 import com.arvind.model.InvestmentTransaction;
 import com.arvind.model.Quote;
-import com.arvind.model.SavingTransaction;
 import com.arvind.model.Security;
 import com.arvind.repository.AccountDao;
 import com.arvind.repository.AccountPositionDao;
@@ -58,7 +51,6 @@ import com.arvind.repository.UploadInvestmentTransDao;
 import com.arvind.repository.UploadSavingTransDao;
 import com.arvind.util.AccountType;
 import com.arvind.util.SecurityType;
-import com.arvind.util.TransactionType;
 import com.arvind.util.Util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -169,7 +161,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 	}
 
 	@Override
-	@Scheduled(cron = "0 50 17 * * *")
+//	@Scheduled(cron = "0 16 16 * * *")
 	public Map<String, Object> updateQuotes() {
 		
 		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
@@ -207,32 +199,17 @@ public class InvestmentServiceImpl implements InvestmentService {
 			}
 		}
 
-//		tickers.clear();
-//		tickers.add("MTD");
-//		
 		List<Quote> quotes = new ArrayList<>();
 		for (String ticker : tickers) {			
 			List<Quote> tickerQuotes = new ArrayList<>();
-//			if (!StringUtils.equals(ticker, "VHYAX")) {
-//				continue;
-//			}
 			if (secMap.containsKey(ticker)) {
 				ObjectMapper mapper = new ObjectMapper();
 				SimpleModule module = new SimpleModule();
-//				module.addDeserializer(Quote.class, new ItemDeserializer());
 				module.addDeserializer(List.class, new QuoteListDeserializer());
 				mapper.registerModule(module);
 				try {
 					
 					TimeUnit.SECONDS.sleep(30);
-/*					String urlStr = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=";
-					urlStr += ticker;
-					urlStr += "&apikey=LVOYR1B8IC22JABA";
-					log.info(urlStr);
-					Quote testQ = mapper.readValue(new URL(urlStr), Quote.class); 
-					log.info(testQ.toString());
-					quotes.add(testQ);
-*/
 					String urlStr = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=";
 					urlStr += ticker;
 					urlStr += "&outputsize=full";
@@ -241,7 +218,6 @@ public class InvestmentServiceImpl implements InvestmentService {
 					List<Quote> testQ = mapper.readValue(new URL(urlStr), List.class); 
 					log.info("Ticker " + ticker + " has " + testQ.size() + " quotes");
 					tickerQuotes.addAll(testQ);
-//						} catch (IOException  e) {
 				} catch (IOException | InterruptedException e) {
 					log.info("Got Exception");
 					e.printStackTrace();
@@ -295,12 +271,10 @@ public class InvestmentServiceImpl implements InvestmentService {
 
 			for (Quote quote : newAddQuotes) {
 				bw.write("Add: " + quote.toString());
-//				quoteDao.insert(quote);
 			}
 			
 			for (Quote quote : updQuotes) {
 				bw.write("Upd: " + quote.toString());
-				//				quoteDao.update(quote);
 			}
 		} catch (IOException ex) {
 			ex.printStackTrace();
@@ -366,19 +340,10 @@ public class InvestmentServiceImpl implements InvestmentService {
 			if (secMap.containsKey(ticker)) {
 				ObjectMapper mapper = new ObjectMapper();
 				SimpleModule module = new SimpleModule();
-//				module.addDeserializer(Quote.class, new ItemDeserializer());
 				module.addDeserializer(List.class, new QuoteListDeserializer());
 				mapper.registerModule(module);
 				try {
 					TimeUnit.SECONDS.sleep(30);
-//					String urlStr = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=";
-//					urlStr += ticker;
-//					urlStr += "&apikey=LVOYR1B8IC22JABA";
-//					log.info(urlStr);
-//					Quote testQ = mapper.readValue(new URL(urlStr), Quote.class); 
-//					log.info(testQ.toString());
-//					quotes.add(testQ);
-
 					String urlStr = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=";
 					urlStr += ticker;
 					urlStr += "&apikey=LVOYR1B8IC22JABA";
@@ -386,13 +351,10 @@ public class InvestmentServiceImpl implements InvestmentService {
 					List<Quote> testQ = mapper.readValue(new URL(urlStr), List.class); 
 					log.info("Ticker " + ticker + " has " + testQ.size() + " quotes");
 					quotes.addAll(testQ);
-////					quotes.add(testQ);
 				} catch (IOException | InterruptedException e) {
 					log.info("Got Exception");
 					e.printStackTrace();
 				}
-//				
-//				break;
 			}
 		}
 		
@@ -404,7 +366,6 @@ public class InvestmentServiceImpl implements InvestmentService {
 				if (tickerQuotes.containsKey(currentQuote.getQuoteDate())) {
 					Quote dbQuote = tickerQuotes.get(currentQuote.getQuoteDate());
 					if (dbQuote.getPricePs().compareTo(currentQuote.getPricePs()) == 0) {
-//						log.info("Skipping update for " + dbQuote.getTicker() + " for date " + dbQuote.getQuoteDate());
 						continue;
 					} else if (dbQuote.getPricePs().compareTo(currentQuote.getPricePs()) != 0) {
 						updQuotes.add(currentQuote);
@@ -413,7 +374,6 @@ public class InvestmentServiceImpl implements InvestmentService {
 				}
 			}
 			addQuotes.add(currentQuote);
-			log.info("Adding quote for " + currentQuote.getTicker() + " for date " + currentQuote.getQuoteDate());
 		}
 		
 		for (Quote quote : addQuotes) {
@@ -435,20 +395,7 @@ public class InvestmentServiceImpl implements InvestmentService {
 		quote.setTicker(trans.getTicker());
 		quote.setQuoteDate(trans.getTransDate());
 		quote.setPricePs(trans.getQuote());
-		updatePrice(quote);
-		
-//		if (StringUtils.isBlank(trans.getTicker())) {
-//			return;
-//		}
-//		
-//		List<Quote> dbQuotes = quoteDao.findQuoteByTickerDate(trans.getTicker(), trans.getTransDate());
-//		if (CollectionUtils.isEmpty(dbQuotes)) {
-//			Quote quote = new Quote();
-//			quote.setTicker(trans.getTicker());
-//			quote.setQuoteDate(trans.getTransDate());
-//			quote.setPricePs(trans.getQuote());
-//			quoteDao.insert(quote);
-//		}
+		updatePrice(quote);		
 	}
 
 	@Override
@@ -578,9 +525,6 @@ public class InvestmentServiceImpl implements InvestmentService {
 					currentQuote = latestQuotes.get(position.getTicker()).getKey().getPricePs();
 					changeInPrice = latestQuotes.get(position.getTicker()).getValue();
 				}
-//				BigDecimal currentQuote = quoteMap.containsKey(position.getTicker()) ? 
-//						quoteMap.get(position.getTicker()).getPricePs() : BigDecimal.ONE;
-
 				BigDecimal currentQty = position.getQuantity();
 
 				BigDecimal positionVal = currentQuote.multiply(currentQty);
@@ -614,43 +558,5 @@ public class InvestmentServiceImpl implements InvestmentService {
 		balance.setChangeInPositionsValue(acctPosValChange.setScale(2, BigDecimal.ROUND_HALF_UP));
 		return balance;
 	}
-
-//	public TreeMap<LocalDate, BigDecimal> getAccountBalance1(AccountBal bal, int acctId) {
-//		TreeMap<LocalDate, BigDecimal> balanceMap = new TreeMap<>();
-//		List<CheckingTransaction> transactions = findTransactionsByAcctId(acctId);
-//		if (CollectionUtils.isEmpty(transactions)) {
-//			bal.setBalanceAmt(BigDecimal.ZERO);
-//		} else {
-//			balanceMap = Util.updateCheckingBalanceByMonth(transactions);
-//			for (Map.Entry<LocalDate, BigDecimal> entry : balanceMap.entrySet()) {
-//				System.out.println(entry.getKey() + "/" + entry.getValue());
-//			}
-//			bal.setBalanceAmt(transactions.get(0).getBalanceAmt());			
-//		}
-//		bal.setAccountValue(bal.getBalanceAmt());
-//		return balanceMap;
-//	}
-
-//	public static HashMap<String, BigDecimal> updateInvestmentBalance(List<InvestmentTransaction> transactions) {
-//		HashMap<String, BigDecimal> shareBal = new HashMap<>();
-//		BigDecimal balance = new BigDecimal(0);
-//		for (InvestmentTransaction trans : transactions) {
-//			balance = balance.add(trans.getTransAmt());
-//			trans.setBalanceAmt(balance);
-//			
-//			if (StringUtils.isNotBlank(trans.getTicker())) {
-//				BigDecimal transQuantity = calculateQuantity(trans);
-//				if (shareBal.containsKey(trans.getTicker())) {
-//					transQuantity = shareBal.get(trans.getTicker()).add(transQuantity);
-//				}
-//				shareBal.put(trans.getTicker(), transQuantity);
-//				trans.setBalanceQty(transQuantity);
-//			}
-//		}
-//		shareBal.put("Cash", balance);
-//		Collections.reverse(transactions);
-//		return shareBal;
-//	}
-
 
 }
